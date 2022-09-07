@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/usace/hms-mutator/transposition"
 	"github.com/usace/wat-go-sdk/plugin"
 )
 
@@ -105,6 +106,8 @@ func computePayload(payload plugin.ModelPayload) error {
 		return err
 	}
 	//transpose
+	t, err := transposition.InitModel(gpkgRI)
+	x, y, err := t.Transpose(1234) //update with event configuration.
 	//update files
 	//upload updated files.
 	//output read all bytes
