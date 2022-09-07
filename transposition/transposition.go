@@ -52,6 +52,7 @@ func (t Model) Transpose(seed int64) (float64, float64, error) {
 	yrand := rand.New(rand.NewSource(r.Int63()))
 	xval := t.xDist(x.Float64())
 	yval := t.xDist(y.Float64())
+	//validate if in transposition polygon, iterate until it is
 	return xval, yval, nil
 }
 func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) error {
