@@ -75,16 +75,38 @@ func computePayload(payload plugin.ModelPayload) error {
 			metRI = rfd.ResourceInfo
 			foundMet = true
 		}
-		if strings.Contains(rfd.FileName, ".shp") {
-			metRI = rfd.ResourceInfo
-			foundMet = true
+		if strings.Contains(rfd.FileName, ".gpkg") {
+			gpkgRI = rfd.ResourceInfo
+			foundGpkg = true
 		}
-		if strings.Contains(rfd.FileName, ".dss") {
-			metRI = rfd.ResourceInfo
-			foundMet = true
+		if strings.Contains(rfd.FileName, ".control") {
+			controlRI = rfd.ResourceInfo
+			foundControl = true
 		}
 	}
-	//if foundGrid
+	if !foundGrid {
+		err := fmt.Errorf("could not find grid file for storm definitions")
+		logError(err, payload)
+		return err
+	}
+	if !foundMet {
+		err := fmt.Errorf("could not find met file for meterologic conditions")
+		logError(err, payload)
+		return err
+	}
+	if !foundGpkg {
+		err := fmt.Errorf("could not find gpkg file for transposition region")
+		logError(err, payload)
+		return err
+	}
+	if !foundControl {
+		err := fmt.Errorf("could not find control file for timewindow specifications")
+		logError(err, payload)
+		return err
+	}
+	//transpose
+	//update files
+	//upload updated files.
 	//output read all bytes
 	bytes, err := ioutil.ReadFile(outfp)
 	if err != nil {
