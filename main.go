@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/transposition"
 	"github.com/usace/wat-go-sdk/plugin"
 )
@@ -105,6 +106,10 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
+	//read grid file
+	gf, err := hms.ReadGrid(gridRI)
+	//select event
+	ge, err := gf.SelectEvent(1234) //update with event configuration.
 	//transpose
 	t, err := transposition.InitModel(gpkgRI)
 	x, y, err := t.Transpose(1234) //update with event configuration.
