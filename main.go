@@ -11,9 +11,10 @@ import (
 	"github.com/usace/wat-go-sdk/plugin"
 )
 
-var string pluginName = "hms-mutator"
+var pluginName string = "hms-mutator"
 
 func main() {
+
 	fmt.Println("hms-mutator!")
 	var payloadPath string
 	flag.StringVar(&payloadPath, "payload", "pathtopayload.yml", "please specify an input file using `-payload pathtopayload.yml`")
@@ -47,31 +48,43 @@ func main() {
 }
 func computePayload(payload plugin.ModelPayload) error {
 
-	if len(payload.Outputs) != 1 {
-		err := errors.New(fmt.Sprint("expecting one output to be defined found", len(payload.Outputs)))
+	if len(payload.Outputs) != 2 {
+		err := errors.New(fmt.Sprint("expecting 4 outputs to be defined, found", len(payload.Outputs)))
 		logError(err, payload)
 		return err
 	}
-	if len(payload.Inputs) != 3 {
-		err := errors.New(fmt.Sprint("expecting 2 inputs to be defined found ", len(payload.Inputs)))
+	if len(payload.Inputs) != 2 {
+		err := errors.New(fmt.Sprint("expecting 2 inputs to be defined, found ", len(payload.Inputs)))
 		logError(err, payload)
 		return err
 	}
+	var gridRI plugin.ResourceInfo
+	var metRI plugin.ResourceInfo
 	var gpkgRI plugin.ResourceInfo
-	var depthGridRI plugin.ResourceInfo
-	foundDepthGrid := false
-	foundGPKG := false
+	var controlRI plugin.ResourceInfo
+	foundGrid := false
+	foundMet := false
+	foundGpkg := false
+	foundControl := false
 	for _, rfd := range payload.Inputs {
-		if strings.Contains(rfd.FileName, ".tif") {
-			depthGridRI = rfd.ResourceInfo
-			foundDepthGrid = true
+		if strings.Contains(rfd.FileName, ".grid") {
+			gridRI = rfd.ResourceInfo
+			foundGrid = true
 		}
-		if strings.Contains(rfd.FileName, ".gpkg") {
-			gpkgRI = rfd.ResourceInfo
-			foundGPKG = true
+		if strings.Contains(rfd.FileName, ".met") {
+			metRI = rfd.ResourceInfo
+			foundMet = true
+		}
+		if strings.Contains(rfd.FileName, ".shp") {
+			metRI = rfd.ResourceInfo
+			foundMet = true
+		}
+		if strings.Contains(rfd.FileName, ".dss") {
+			metRI = rfd.ResourceInfo
+			foundMet = true
 		}
 	}
-
+	//if foundGrid
 	//output read all bytes
 	bytes, err := ioutil.ReadFile(outfp)
 	if err != nil {
