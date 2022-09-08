@@ -54,15 +54,56 @@ func ReadMet(metResource plugin.ResourceInfo) (Met, error) {
 	metModel.PrecipMethodParameters = precipMethod
 	return metModel, nil
 }
-func (m Met) UpdateStormCenter(x string, y string) error {
+func (m *Met) UpdateStormCenter(x string, y string) error {
+	foundX := false
+	foundY := false
+	for idx, l := range m.PrecipMethodParameters.lines {
+		if strings.Contains(l, StormCenterXKeyword) {
+			foundX = true
+			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", StormCenterXKeyword, x)
+		}
+		if strings.Contains(l, StormCenterYKeyword) {
+			foundY = true
+			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", StormCenterYKeyword, y)
+		}
+	}
+	if !foundX {
+		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", StormCenterXKeyword, x))
+	}
+	if !foundY {
+		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", StormCenterYKeyword, y))
+	}
 	return nil
 }
-func (m Met) UpdateTimeShift(x string, y string) error {
+func (m *Met) UpdateStormName(stormName string) error {
+	for idx, l := range m.PrecipMethodParameters.lines {
+		if strings.Contains(l, PrecipGridNameKeyword) {
+			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", PrecipGridNameKeyword, stormName)
+		}
+	}
 	return nil
 }
-func (m Met) Write(outRI plugin.ResourceInfo) error {
+func (m *Met) UpdateTimeShift(timeShift string) error {
+	foundTimeShift := false
+	for idx, l := range m.PrecipMethodParameters.lines {
+		if strings.Contains(l, TimeShiftKeyword) {
+			foundTimeShift = true
+			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", timeShift, timeShift)
+		}
+	}
+	if !foundTimeShift {
+		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", timeShift, timeShift))
+	}
+	return nil
+}
+func (m Met) WriteBytes() ([]byte, error) {
 	//write a met model.
-	return nil
+	filestring := m.metString
+	for _, l := range m.PrecipMethodParameters.lines {
+		filestring = fmt.Sprintf("%v%v", filestring, l)
+	}
+	bytes := []byte(filestring)
+	return bytes, nil
 }
 
 /*
