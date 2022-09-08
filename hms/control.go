@@ -1,7 +1,9 @@
 package hms
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/usace/wat-go-sdk/plugin"
 )
@@ -42,9 +44,17 @@ func ReadControl(controlRI plugin.ResourceInfo) (Control, error) {
 
 func (c Control) ComputeOffset(gridStartDateTime string) int {
 	//parse input as DDMMMYYYY:HHMM //24 hour clocktime
+	//	Jan 2 15:04:05 2006 MST - reference
+	gsdt, _ := time.Parse(gridStartDateTime, "02JAN2006:1504")
 	//parse control start date and time.
+	//DD FULLMONTHNAME YYYY
+	//HH:MM hours in 24 hour clock
+	fulltime := fmt.Sprint(c.StartDate, c.StartTime)
+	csdt, _ := time.Parse(fulltime, "02 January 2006 15:04")
 	//compute offset set negative for pushing grid startDateTime into the future set positive to bring grid set into the past
-	return 0
+	detailOffset := gsdt.Sub(csdt)
+	minOffset := detailOffset.Minutes()
+	return int(minOffset)
 }
 
 //find the start date and time and compare it to the start date and time of the grid. calculate an offset to input into the met file
