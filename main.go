@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"math/rand"
 	"os"
 	"strings"
 
@@ -55,8 +55,8 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
-	if len(payload.Inputs) != 2 {
-		err := errors.New(fmt.Sprint("expecting 2 inputs to be defined, found ", len(payload.Inputs)))
+	if len(payload.Inputs) != 1 {
+		err := errors.New(fmt.Sprint("expecting 1 input to be defined, found ", len(payload.Inputs)))
 		logError(err, payload)
 		return err
 	}
@@ -71,6 +71,10 @@ func computePayload(payload plugin.ModelPayload) error {
 	foundGpkg := false
 	foundControl := false
 	for _, rfd := range payload.Inputs {
+		if strings.Contains(rfd.FileName, "eventconfiguration.json") {
+			eventConfigRI = rfd.ResourceInfo
+			foundEventConfig = true
+		}
 		if strings.Contains(rfd.FileName, ".grid") {
 			gridRI = rfd.ResourceInfo
 			foundGrid = true
@@ -87,6 +91,11 @@ func computePayload(payload plugin.ModelPayload) error {
 			controlRI = rfd.ResourceInfo
 			foundControl = true
 		}
+	}
+	if !foundEventConfig {
+		err := fmt.Errorf("could not find event configuration to find the proper seeds to run sst")
+		logError(err, payload)
+		return err
 	}
 	if !foundGrid {
 		err := fmt.Errorf("could not find grid file for storm definitions")
@@ -108,22 +117,34 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
+	//read event configuration to get natural variability seed
+	ec, err := plugin.LoadEventConfiguration(eventConfigRI)
+	ss, err := ec.SeedSet(payload.Model.Alternative)
+	nvrng := rand.New(rand.NewSource(ss.EventSeed))
+	stormSeed := nvrng.Int63()
+	transpositionSeed := nvrng.Int63()
 	//read grid file
 	gf, err := hms.ReadGrid(gridRI)
 	//select event
-	ge, err := gf.SelectEvent(1234) //update with event configuration.
+	ge, err := gf.SelectEvent(stormSeed)
 	//transpose
 	t, err := transposition.InitModel(gpkgRI)
-	x, y, err := t.Transpose(1234) //update with event configuration.
-	//update files
+	x, y, err := t.Transpose(transpositionSeed)
+	//read control
+	c, err := hms.ReadControl(controlRI)
+	offset := c.ComputeOffset(ge.StartTime)
+	//read met file
+	m, err := hms.ReadMet(metRI)
+	//update met storm name
+	m.UpdateStormName(ge.Name)
+	//update storm center
+	m.UpdateStormCenter(fmt.Sprintf("%v", x), fmt.Sprintf("%v", y))
+	//update timeshift
+	m.UpdateTimeShift(fmt.Sprintf("%v", offset))
+	//get met file bytes
+	mbytes, err := m.WriteBytes()
 	//upload updated files.
-	//output read all bytes
-	bytes, err := ioutil.ReadFile(outfp)
-	if err != nil {
-		logError(err, payload)
-		return err
-	}
-	err = plugin.UpLoadFile(payload.Outputs[0].ResourceInfo, bytes)
+	err = plugin.UpLoadFile(payload.Outputs[0].ResourceInfo, mbytes)
 	if err != nil {
 		logError(err, payload)
 		return err
@@ -132,7 +153,7 @@ func computePayload(payload plugin.ModelPayload) error {
 		Status:    plugin.SUCCEEDED,
 		Progress:  100,
 		Level:     plugin.INFO,
-		Message:   "consequences complete",
+		Message:   "hms mutator complete",
 		Sender:    pluginName,
 		PayloadId: payload.Id,
 	})

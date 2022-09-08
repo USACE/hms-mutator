@@ -47,12 +47,20 @@ func InitModel(transpositionRegion plugin.ResourceInfo) (Model, error) {
 }
 func (t Model) Transpose(seed int64) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
-	xrand := rand.New(rand.NewSource(r.Int63()))
-	yrand := rand.New(rand.NewSource(r.Int63()))
-	xval := t.xDist.InvCDF(xrand.Float64())
-	yval := t.xDist.InvCDF(yrand.Float64())
-	//validate if in transposition polygon, iterate until it is
-	return xval, yval, nil
+	layer := t.ds.LayerByIndex(0)
+	f := layer.Feature(0)
+	for {
+		xrand := rand.New(rand.NewSource(r.Int63()))
+		yrand := rand.New(rand.NewSource(r.Int63()))
+		xval := t.xDist.InvCDF(xrand.Float64())
+		yval := t.xDist.InvCDF(yrand.Float64())
+		//validate if in transposition polygon, iterate until it is
+		p := gdal.Geometry{}
+		p.SetPoint2D(0, xval, yval) //@TODO: verify this is correct.
+		if f.Geometry().Intersects(p) {
+			return xval, yval, nil
+		}
+	}
 }
 func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) error {
 	if _, err := os.Stat(destinationRoot); os.IsNotExist(err) {
