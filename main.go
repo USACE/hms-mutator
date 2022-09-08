@@ -50,8 +50,8 @@ func main() {
 }
 func computePayload(payload plugin.ModelPayload) error {
 
-	if len(payload.Outputs) != 2 {
-		err := errors.New(fmt.Sprint("expecting 4 outputs to be defined, found", len(payload.Outputs)))
+	if len(payload.Outputs) != 5 {
+		err := errors.New(fmt.Sprint("expecting 5 outputs to be defined, found", len(payload.Outputs)))
 		logError(err, payload)
 		return err
 	}
@@ -60,10 +60,12 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
+	var eventConfigRI plugin.ResourceInfo
 	var gridRI plugin.ResourceInfo
 	var metRI plugin.ResourceInfo
 	var gpkgRI plugin.ResourceInfo
 	var controlRI plugin.ResourceInfo
+	foundEventConfig := false
 	foundGrid := false
 	foundMet := false
 	foundGpkg := false
