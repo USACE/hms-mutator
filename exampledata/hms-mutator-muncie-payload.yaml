@@ -1,0 +1,44 @@
+payload_id: 123456789
+model:
+  name: hms-mutator-muncie
+  alternative: hms-mutator-muncie-alt
+inputs:
+  - filename: eventconfiguration.json
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/eventconfiguration.json
+    internal_paths:
+      - pathname: hms-mutator-muncie-alt
+        filename: eventconfiguration.json
+        internal_path: hms-mutator-muncie-alt
+        resource_info:
+          store: Local
+          root: /workspaces/hms-mutator/
+          path: ../exampledata/eventconfiguration.json
+  - filename: AORC.met
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/AORC.met
+  - filename: Dec_2013.control
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/Dec_2013.control
+  - filename: WhiteRiver_Muncie.grid
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/WhiteRiver_Muncie.grid
+  - filename: Muncie_TranspositionRegion.gpkg
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/Muncie_TranspositionRegion.gpkg
+outputs:
+  - filename: AORC.met
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/runs/event_0/AORC.met
