@@ -30,7 +30,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 		return GridFile{}, err
 	}
 	gridstring := string(bytes)
-	lines := strings.Split(gridstring, "\n") //maybe rn?
+	lines := strings.Split(gridstring, "\r\n") //maybe rn?
 	grids := make([]PrecipGridEvent, 0)
 	var precipGrid PrecipGridEvent
 	var isPrecipGrid = false
@@ -51,6 +51,9 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 			parts := strings.Split(pathName, "/")
 			startTime := parts[3] //parse DDMMMYYYY:HHMM //24 hour clocktime
 			precipGrid.StartTime = startTime
+			if strings.Contains(precipGrid.StartTime, "2400") {
+				precipGrid.StartTime = strings.Replace(precipGrid.StartTime, "2400", "2359", 1)
+			}
 		}
 		if strings.Contains(l, GridEndKeyword) {
 			if isPrecipGrid {

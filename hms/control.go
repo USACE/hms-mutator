@@ -26,7 +26,7 @@ func ReadControl(controlRI plugin.ResourceInfo) (Control, error) {
 		return Control{}, err
 	}
 	controlstring := string(bytes)
-	lines := strings.Split(controlstring, "\n") //maybe rn?
+	lines := strings.Split(controlstring, "\r\n") //maybe rn?
 	control := Control{}
 	for _, l := range lines {
 		if strings.Contains(l, ControlKeyword) {
@@ -37,6 +37,9 @@ func ReadControl(controlRI plugin.ResourceInfo) (Control, error) {
 		}
 		if strings.Contains(l, StartTimeKeyword) {
 			control.StartTime = strings.TrimLeft(l, StartTimeKeyword)
+			if control.StartTime == "24:00" {
+				control.StartTime = "23:59"
+			}
 		}
 	}
 	return control, nil
@@ -45,12 +48,18 @@ func ReadControl(controlRI plugin.ResourceInfo) (Control, error) {
 func (c Control) ComputeOffset(gridStartDateTime string) int {
 	//parse input as DDMMMYYYY:HHMM //24 hour clocktime
 	//	Jan 2 15:04:05 2006 MST - reference
-	gsdt, _ := time.Parse(gridStartDateTime, "02JAN2006:1504")
+	gsdt, err := time.Parse("02Jan2006:1504", gridStartDateTime)
+	if err != nil {
+		fmt.Println(err)
+	}
 	//parse control start date and time.
 	//DD FULLMONTHNAME YYYY
 	//HH:MM hours in 24 hour clock
-	fulltime := fmt.Sprint(c.StartDate, c.StartTime)
-	csdt, _ := time.Parse(fulltime, "02 January 2006 15:04")
+	fulltime := fmt.Sprint(c.StartDate, " ", c.StartTime)
+	csdt, err := time.Parse("02 January 2006 15:04", fulltime)
+	if err != nil {
+		fmt.Println(err)
+	}
 	//compute offset set negative for pushing grid startDateTime into the future set positive to bring grid set into the past
 	detailOffset := gsdt.Sub(csdt)
 	minOffset := detailOffset.Minutes()
