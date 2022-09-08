@@ -1,5 +1,12 @@
 package hms
 
+var PrecipStartKeyword string = "Precip Method Parameters:"
+var PrecipEndKeyword string = "End:"
+var PrecipGridNameKeyword string = "Precip Grid Name: "
+var StormCenterXKeyword string = "Storm Center X-coordinate: "
+var StormCenterYKeyword string = "Storm Center Y-coordinate: "
+var TimeShiftKeyword string = "Time Shift: " //in minutes Negative is FORWARD.
+
 type Met struct {
 }
 
