@@ -1,5 +1,12 @@
 package hms
 
+import (
+	"fmt"
+	"strings"
+
+	"github.com/usace/wat-go-sdk/plugin"
+)
+
 var PrecipStartKeyword string = "Precip Method Parameters:"
 var PrecipEndKeyword string = "End:"
 var PrecipGridNameKeyword string = "Precip Grid Name: "
@@ -8,6 +15,54 @@ var StormCenterYKeyword string = "Storm Center Y-coordinate: "
 var TimeShiftKeyword string = "Time Shift: " //in minutes Negative is FORWARD.
 
 type Met struct {
+	metString string
+	PrecipMethodParameters
+}
+type PrecipMethodParameters struct {
+	lines []string
+}
+
+func ReadMet(metResource plugin.ResourceInfo) (Met, error) {
+	//read bytes
+	//loop through and find met and precip blocks
+	bytes, err := plugin.DownloadObject(metResource)
+	if err != nil {
+		return Met{}, err
+	}
+	metfilestring := string(bytes)
+	lines := strings.Split(metfilestring, "\n") //maybe rn?
+	foundPrecipMethod := false
+	metString := ""
+	metModel := Met{}
+	var precipMethod PrecipMethodParameters
+	preciplines := make([]string, 0)
+	for _, l := range lines {
+
+		if strings.Contains(l, PrecipStartKeyword) {
+			foundPrecipMethod = true
+			precipMethod = PrecipMethodParameters{}
+			lines = append(preciplines, l)
+		}
+		if !foundPrecipMethod {
+			metString = fmt.Sprintf("%v%v", metString, l)
+		} else {
+			lines = append(preciplines, l)
+		}
+	}
+	metModel.metString = metString
+	precipMethod.lines = lines
+	metModel.PrecipMethodParameters = precipMethod
+	return metModel, nil
+}
+func (m Met) UpdateStormCenter(x string, y string) error {
+	return nil
+}
+func (m Met) UpdateTimeShift(x string, y string) error {
+	return nil
+}
+func (m Met) Write(outRI plugin.ResourceInfo) error {
+	//write a met model.
+	return nil
 }
 
 /*

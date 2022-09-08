@@ -1,9 +1,20 @@
-FROM osgeo/gdal:alpine-normal-3.2.1 AS dev
+FROM debian:bullseye
 
-RUN apk add --no-cache \
-    build-base \
-    gcc \
-    git
+ENV TZ=America/New_York
+ENV PATH=/go/bin:$PATH
+ENV GOROOT=/go
+ENV GOPATH=/src/go
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone &&\
+    mkdir /go &&\
+    mkdir -p /src/go &&\
+    apt update &&\
+    apt -y install build-essential &&\
+    apt -y install gdal-bin gdal-data libgdal-dev &&\
+    apt -y install wget &&\
+    wget https://golang.org/dl/go1.19.1.linux-amd64.tar.gz -P / &&\
+    tar -xvzf /go1.19.1.linux-amd64.tar.gz -C / &&\
+    apt -y install git
 
 # TODO: add prod build needs gdal
 # FROM osgeo/gdal:alpine-small-3.2.1 as prod

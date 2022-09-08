@@ -42,7 +42,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 		}
 		if strings.Contains(l, GridTypeKeyword) {
 			gridType := strings.TrimLeft(l, GridTypeKeyword)
-			if gridType == PrecipEndKeyword {
+			if gridType == PrecipitationKeyword {
 				isPrecipGrid = true
 			}
 		}

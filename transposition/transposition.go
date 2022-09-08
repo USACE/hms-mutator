@@ -1,7 +1,6 @@
 package transposition
 
 import (
-	"crypto/rand"
 	"fmt"
 	"math/rand"
 	"os"
@@ -17,7 +16,7 @@ type Model struct {
 	yDist statistics.UniformDistribution
 	xDist statistics.UniformDistribution
 	//uniform start time distribution
-	ds gdal.Dataset
+	ds gdal.DataSource
 }
 type ModelResult struct {
 	X float64
@@ -35,11 +34,11 @@ func InitModel(transpositionRegion plugin.ResourceInfo) (Model, error) {
 	fileName := "transpositionregion.gpkg"
 	filePath := fmt.Sprintf("%v%v", localDir, fileName)
 	err = writeLocalBytes(bytes, localDir, filePath)
-	ds, err := gdal.OpenDataSource(filePath, gdal.ReadOnly) //defer disposing the datasource and layers.
+	ds := gdal.OpenDataSource(filePath, 0) //defer disposing the datasource and layers.
 	layer := ds.LayerByIndex(0)
 	envelope, err := layer.Extent(true)
-	x := statistics.UniformDistribution{Max: envelope.MaxX, Min: envelope.MinX}
-	y := statistics.UniformDistribution{Max: envelope.MaxY, Min: envelope.MinY}
+	x := statistics.UniformDistribution{Max: envelope.MaxX(), Min: envelope.MinX()}
+	y := statistics.UniformDistribution{Max: envelope.MaxY(), Min: envelope.MinY()}
 	return Model{
 		yDist: y,
 		xDist: x,
@@ -50,8 +49,8 @@ func (t Model) Transpose(seed int64) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
 	xrand := rand.New(rand.NewSource(r.Int63()))
 	yrand := rand.New(rand.NewSource(r.Int63()))
-	xval := t.xDist(x.Float64())
-	yval := t.xDist(y.Float64())
+	xval := t.xDist.InvCDF(xrand.Float64())
+	yval := t.xDist.InvCDF(yrand.Float64())
 	//validate if in transposition polygon, iterate until it is
 	return xval, yval, nil
 }
@@ -64,7 +63,7 @@ func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) e
 		plugin.Log(plugin.Message{
 			Message: fmt.Sprintf("failure to write local file: %v\n\terror:%v", destinationPath, err),
 			Level:   plugin.ERROR,
-			Sender:  "go-consequences-wat",
+			Sender:  "transposition",
 		})
 		return err
 	}
