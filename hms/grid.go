@@ -15,7 +15,7 @@ var DssPathNameKeyword string = "       DSS Pathname: "
 
 type PrecipGridEvent struct {
 	Name      string
-	StartTime string
+	StartTime string //parse DDMMMYYYY:HHMM //24 hour clocktime
 }
 
 type GridFile struct {
