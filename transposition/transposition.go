@@ -49,15 +49,18 @@ func (t Model) Transpose(seed int64) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
 	layer := t.ds.LayerByIndex(0)
 	f := layer.Feature(0)
+	jsonStartString := "{\"type\": \"Feature\",\"geometry\": {\"type\": \"Point\",\"coordinates\": ["
+	jsonEndString := "]},\"properties\": {\"name\": \"Storm Center\"}}"
 	for {
 		xrand := rand.New(rand.NewSource(r.Int63()))
 		yrand := rand.New(rand.NewSource(r.Int63()))
 		xval := t.xDist.InvCDF(xrand.Float64())
 		yval := t.xDist.InvCDF(yrand.Float64())
 		//validate if in transposition polygon, iterate until it is
-		p := gdal.Geometry{}
-		p.SetPoint2D(0, xval, yval) //@TODO: verify this is correct.
-		if f.Geometry().Intersects(p) {
+		jsonString := fmt.Sprintf("%v%v,%v%v", jsonStartString, xval, yval, jsonEndString)
+		geom := gdal.CreateFromJson(jsonString)
+
+		if f.Geometry().Intersects(geom) {
 			return xval, yval, nil
 		}
 	}

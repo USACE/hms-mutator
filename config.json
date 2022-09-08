@@ -1,0 +1,14 @@
+{
+	"aws_configs": [{
+		"aws_config_name": "Test With MINIO",
+		"is_primary_config": true,
+		"aws_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+		"aws_secret_access_key_id": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+		"aws_region": "us-east-1",
+		"aws_bucket": "model-library",
+        "aws_mock": true,
+        "aws_endpoint": "host.docker.internal:9000",
+        "aws_disable_ssl": true,
+        "aws_force_path_style": true
+	}]
+}

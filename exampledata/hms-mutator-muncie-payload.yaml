@@ -35,7 +35,7 @@ inputs:
     resource_info:
       store: Local
       root: /workspaces/hms-mutator/
-      path: ../exampledata/Muncie_TranspositionRegion.gpkg
+      path: ../exampledata/muncie_simple_transposition_region.gpkg
 outputs:
   - filename: AORC.met
     resource_info:
