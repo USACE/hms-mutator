@@ -1,0 +1,58 @@
+Meteorology: AORC
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 22:01:54
+     Version: 4.10
+     Unit System: English
+     Set Missing Data to Default: Yes
+     Precipitation Method: Gridded Precipitation
+     Air Temperature Method: None
+     Atmospheric Pressure Method: None
+     Dew Point Method: None
+     Wind Speed Method: None
+     Shortwave Radiation Method: None
+     Longwave Radiation Method: None
+     Snowmelt Method: None
+     Evapotranspiration Method: No Evapotranspiration
+     Use Basin Model: WhiteRiver_Muncie_Dec2013
+End:
+
+Precip Method Parameters: Gridded Precipitation
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+     Precip Grid Name: AORC
+End:
+
+Subbasin: WhiteRiver_S30
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+End:
+
+Subbasin: CabinCreek
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+End:
+
+Subbasin: WhiteRiver_S20
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+End:
+
+Subbasin: WhiteRiver_S10
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+End:
+
+Subbasin: PrairieCkRes_Watershed
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+End:
+
+Subbasin: StoneyCreek
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+End:
+
+Subbasin: LittleWhiteRiver
+     Last Modified Date: 7 September 2022
+     Last Modified Time: 21:40:19
+End:

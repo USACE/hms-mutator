@@ -68,10 +68,12 @@ func (m *Met) UpdateStormCenter(x string, y string) error {
 		}
 	}
 	if !foundX {
-		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", StormCenterXKeyword, x))
+		m.PrecipMethodParameters.lines[len(m.PrecipMethodParameters.lines)] = fmt.Sprintf("%v%v", StormCenterXKeyword, x)
+		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, PrecipEndKeyword)
 	}
 	if !foundY {
-		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", StormCenterYKeyword, y))
+		m.PrecipMethodParameters.lines[len(m.PrecipMethodParameters.lines)] = fmt.Sprintf("%v%v", StormCenterYKeyword, y)
+		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, PrecipEndKeyword)
 	}
 	return nil
 }
@@ -92,7 +94,8 @@ func (m *Met) UpdateTimeShift(timeShift string) error {
 		}
 	}
 	if !foundTimeShift {
-		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", timeShift, timeShift))
+		m.PrecipMethodParameters.lines[len(m.PrecipMethodParameters.lines)] = fmt.Sprintf("%v%v", timeShift, timeShift)
+		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, PrecipEndKeyword)
 	}
 	return nil
 }

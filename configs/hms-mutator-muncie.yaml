@@ -1,0 +1,26 @@
+linked_manifest_id: 12345678
+plugin:
+  name: hms-mutator
+  image_and_tag: williamlehman/hms-mutator:v0.0.1
+  command:
+    - ./main
+    - payload
+model:
+  name: hms-mutator-muncie
+  alternative: hms-mutator-muncie-alt
+inputs:
+  - filename: eventconfiguration.json
+    source_data_identifier: cd84ad61-ebae-4cf6-93f4-b638b842cb3d
+    internal_paths: ## there might be dozens, each a different type.
+      - pathname: hms-mutator-muncie-alt
+        source_file_identifier: cd84ad61-ebae-4cf6-93f4-b638b842cb3d
+        source_path_identifier: 2b5c6b24-363d-4cbb-bf90-12345
+  - filename: AORC.met
+    source_data_identifier: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
+  - filename: Dec_2013.control
+    source_data_identifier: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
+  - filename: WhiteRiver_Muncie.grid
+    source_data_identifier: aa7e7ecb-fcec-4c6e-a993-75bf2a2cab11
+outputs:
+  - filename: AORC.met
+    id: 954f6b09-8f2d-4b6c-b689-7ad4a73ec3f6
