@@ -49,7 +49,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 		if strings.Contains(l, DssPathNameKeyword) {
 			pathName := strings.TrimLeft(l, DssPathNameKeyword)
 			parts := strings.Split(pathName, "/")
-			startTime := parts[3] //parse DDMMMYYYY:HHMM //24 hour clocktime
+			startTime := parts[4] //parse DDMMMYYYY:HHMM //24 hour clocktime
 			precipGrid.StartTime = startTime
 			if strings.Contains(precipGrid.StartTime, "2400") {
 				precipGrid.StartTime = strings.Replace(precipGrid.StartTime, "2400", "2359", 1)

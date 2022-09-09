@@ -4,11 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"math/rand"
-	"os"
 	"strings"
 
-	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/transposition"
 	"github.com/usace/wat-go-sdk/plugin"
 )
@@ -117,32 +114,36 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
-	//read event configuration to get natural variability seed
+	//read event configuration
 	ec, err := plugin.LoadEventConfiguration(eventConfigRI)
+	if err != nil {
+		logError(err, payload)
+		return err
+	}
+	//obtain seed set
 	ss, err := ec.SeedSet(payload.Model.Alternative)
-	nvrng := rand.New(rand.NewSource(ss.EventSeed))
-	stormSeed := nvrng.Int63()
-	transpositionSeed := nvrng.Int63()
-	//read grid file
-	gf, err := hms.ReadGrid(gridRI)
-	//select event
-	ge, err := gf.SelectEvent(stormSeed)
-	//transpose
-	t, err := transposition.InitModel(gpkgRI)
-	x, y, err := t.Transpose(transpositionSeed)
-	//read control
-	c, err := hms.ReadControl(controlRI)
-	offset := c.ComputeOffset(ge.StartTime)
-	//read met file
-	m, err := hms.ReadMet(metRI)
-	//update met storm name
-	m.UpdateStormName(ge.Name)
-	//update storm center
-	m.UpdateStormCenter(fmt.Sprintf("%v", x), fmt.Sprintf("%v", y))
-	//update timeshift
-	m.UpdateTimeShift(fmt.Sprintf("%v", offset))
+	if err != nil {
+		logError(err, payload)
+		return err
+	}
+	//initialize simulation
+	sim, err := transposition.InitSimulation(gpkgRI, metRI, gridRI, controlRI)
+	if err != nil {
+		logError(err, payload)
+		return err
+	}
+	//compute simulation for given seed set
+	m, err := sim.Compute(ss)
+	if err != nil {
+		logError(err, payload)
+		return err
+	}
 	//get met file bytes
 	mbytes, err := m.WriteBytes()
+	if err != nil {
+		logError(err, payload)
+		return err
+	}
 	//upload updated files.
 	err = plugin.UpLoadFile(payload.Outputs[0].ResourceInfo, mbytes)
 	if err != nil {
@@ -168,19 +169,4 @@ func logError(err error, payload plugin.ModelPayload) {
 		Sender:    pluginName,
 		PayloadId: payload.Id,
 	})
-}
-func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) error {
-	if _, err := os.Stat(destinationRoot); os.IsNotExist(err) {
-		os.MkdirAll(destinationRoot, 0644) //do i need to trim filename?
-	}
-	err := os.WriteFile(destinationPath, b, 0644)
-	if err != nil {
-		plugin.Log(plugin.Message{
-			Message: fmt.Sprintf("failure to write local file: %v\n\terror:%v", destinationPath, err),
-			Level:   plugin.ERROR,
-			Sender:  pluginName,
-		})
-		return err
-	}
-	return nil
 }
