@@ -47,13 +47,13 @@ func main() {
 }
 func computePayload(payload plugin.ModelPayload) error {
 
-	if len(payload.Outputs) != 5 {
-		err := errors.New(fmt.Sprint("expecting 5 outputs to be defined, found", len(payload.Outputs)))
+	if len(payload.Outputs) != 1 {
+		err := errors.New(fmt.Sprint("expecting 1 outputs to be defined, found", len(payload.Outputs)))
 		logError(err, payload)
 		return err
 	}
-	if len(payload.Inputs) != 1 {
-		err := errors.New(fmt.Sprint("expecting 1 input to be defined, found ", len(payload.Inputs)))
+	if len(payload.Inputs) != 5 {
+		err := errors.New(fmt.Sprint("expecting 5 input to be defined, found ", len(payload.Inputs)))
 		logError(err, payload)
 		return err
 	}
