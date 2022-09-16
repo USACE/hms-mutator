@@ -16,6 +16,7 @@ var DssPathNameKeyword string = "       DSS Pathname: "
 type PrecipGridEvent struct {
 	Name      string
 	StartTime string //parse DDMMMYYYY:HHMM //24 hour clocktime
+	Lines     []string
 }
 
 type GridFile struct {
@@ -33,9 +34,17 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 	lines := strings.Split(gridstring, "\r\n") //maybe rn?
 	grids := make([]PrecipGridEvent, 0)
 	var precipGrid PrecipGridEvent
+	var gridLines = make([]string, 0)
+	var gridFound = false
 	var isPrecipGrid = false
 	for _, l := range lines {
+		if gridFound {
+			gridLines = append(gridLines, l)
+		}
 		if strings.Contains(l, GridStartKeyword) {
+			gridFound = true
+			gridLines = make([]string, 0)
+			gridLines = append(gridLines, l)
 			isPrecipGrid = false
 			name := strings.TrimLeft(l, GridStartKeyword)
 			precipGrid = PrecipGridEvent{Name: name}
@@ -56,7 +65,9 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 			}
 		}
 		if strings.Contains(l, GridEndKeyword) {
+			gridFound = false
 			if isPrecipGrid {
+				precipGrid.Lines = gridLines
 				grids = append(grids, precipGrid)
 			}
 		}
