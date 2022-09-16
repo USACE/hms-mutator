@@ -1,20 +1,13 @@
-FROM debian:bullseye as builder
-
-ENV TZ=America/New_York
-ENV PATH=/go/bin:$PATH
-ENV GOROOT=/go
-ENV GOPATH=/src/go
-
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone &&\
-    mkdir /go &&\
-    mkdir -p /src/go &&\
-    apt update &&\
-    apt -y install build-essential &&\
-    apt -y install gdal-bin gdal-data libgdal-dev &&\
-    apt -y install wget &&\
-    wget https://golang.org/dl/go1.19.1.linux-amd64.tar.gz -P / &&\
-    tar -xvzf /go1.19.1.linux-amd64.tar.gz -C / &&\
-    apt -y install git
+FROM osgeo/gdal:alpine-normal-3.5.2 as builder
+COPY --from=golang:1.19-alpine /usr/local/go/ /usr/local/go/
+RUN apk add --no-cache \
+    pkgconfig \
+    gcc \
+    libc-dev \
+    git
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/go
+ENV PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 
 WORKDIR /app
 RUN git clone https://github.com/USACE/hms-mutator.git
@@ -23,14 +16,7 @@ RUN go mod download
 RUN go mod tidy
 RUN go build main.go
 
-# TODO: add prod build needs gdal - not thrilled im switching from debian to ubuntu
-#FROM osgeo/gdal:ubuntu-small-3.2.1 as prod 
-#WORKDIR /app
-#COPY --from=builder workspaces/hms-mutator/main .
 
-FROM debian:bullseye-slim as prod
-ENV TZ=America/New_York
-RUN apt update
-RUN apt -y install gdal-bin gdal-data libgdal-dev
+FROM osgeo/gdal:alpine-normal-3.5.2 as prod
 WORKDIR /app
 COPY --from=builder /app/hms-mutator/main .
