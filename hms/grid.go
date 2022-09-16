@@ -1,6 +1,7 @@
 package hms
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 
@@ -12,6 +13,7 @@ var GridEndKeyword string = "End:"
 var GridTypeKeyword string = "     Grid Type: "
 var PrecipitationKeyword string = "Precipitation"
 var DssPathNameKeyword string = "       DSS Pathname: "
+var DssFileNameKeyword string = "       DSS File Name: "
 
 type PrecipGridEvent struct {
 	Name      string
@@ -81,4 +83,27 @@ func (gf GridFile) SelectEvent(seed int64) (PrecipGridEvent, error) {
 	r := rand.New(rand.NewSource(seed))
 	idx := r.Int31n(int32(length))
 	return gf.Events[idx], nil
+}
+func (pge PrecipGridEvent) DownloadAndUploadDSSFile(dssResourceInfo plugin.ResourceInfo, outputResourceInfo plugin.ResourceInfo) error {
+
+	relativePath := ""
+	for _, l := range pge.Lines {
+		if strings.Contains(l, DssFileNameKeyword) {
+			relativePath = strings.TrimLeft(l, DssFileNameKeyword)
+		}
+	}
+	//convert relative path to absolute path?
+	dssResourceInfo.Path = relativePath
+	bytes, _ := plugin.DownloadObject(dssResourceInfo)
+	//output destination should be "/data/Storm.dss"
+	plugin.UpLoadFile(outputResourceInfo, bytes)
+	return nil
+}
+func (pge *PrecipGridEvent) UpdateDSSFile() error {
+	for idx, l := range pge.Lines {
+		if strings.Contains(l, DssFileNameKeyword) {
+			pge.Lines[idx] = fmt.Sprintf("%v%v", DssFileNameKeyword, "/data/Storm.dss")
+		}
+	}
+	return nil
 }
