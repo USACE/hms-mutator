@@ -8,6 +8,7 @@ import (
 	"github.com/usace/wat-go-sdk/plugin"
 )
 
+var GridManagerKeyword string = "Grid Manager: "
 var GridStartKeyword string = "Grid: "
 var GridEndKeyword string = "End:"
 var GridTypeKeyword string = "     Grid Type: "
@@ -20,8 +21,11 @@ type PrecipGridEvent struct {
 	StartTime string //parse DDMMMYYYY:HHMM //24 hour clocktime
 	Lines     []string
 }
-
+type GridManager struct {
+	Lines []string
+}
 type GridFile struct {
+	GridManager
 	Events []PrecipGridEvent
 }
 
@@ -36,12 +40,27 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 	lines := strings.Split(gridstring, "\r\n") //maybe rn?
 	grids := make([]PrecipGridEvent, 0)
 	var precipGrid PrecipGridEvent
+	var gridManager GridManager
 	var gridLines = make([]string, 0)
+	var managerLines = make([]string, 0)
 	var gridFound = false
 	var isPrecipGrid = false
 	for _, l := range lines {
+		if gridManagerFound {
+			managerLines = append(managerLines, l)
+			if strings.Contains(l, GridEndKeyword) {
+				gridManagerFound = false
+				gridManager = GridManager{Lines: managerLines}
+			}
+		}
 		if gridFound {
 			gridLines = append(gridLines, l)
+
+		}
+		if strings.Contains(l, GridManagerKeyword) {
+			gridManagerFound = true
+			managerLines = make([]string, 0)
+			managerLines = append(managerLines, l)
 		}
 		if strings.Contains(l, GridStartKeyword) {
 			gridFound = true
@@ -74,7 +93,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 			}
 		}
 	}
-	return GridFile{Events: grids}, nil
+	return GridFile{GridManager: gridManager, Events: grids}, nil
 }
 
 func (gf GridFile) SelectEvent(seed int64) (PrecipGridEvent, error) {
