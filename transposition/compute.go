@@ -44,36 +44,39 @@ func InitSimulation(gpkgRI plugin.ResourceInfo, metRI plugin.ResourceInfo, gridR
 	return s, nil
 
 }
-func (s *Simulation) Compute(seeds plugin.SeedSet) (hms.Met, error) {
+func (s *Simulation) Compute(seeds plugin.SeedSet) (hms.Met, hms.PrecipGridEvent, error) {
 	nvrng := rand.New(rand.NewSource(seeds.EventSeed))
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
 	//select event
 	ge, err := s.gridFile.SelectEvent(stormSeed)
 	if err != nil {
-		return s.metModel, err
+		return s.metModel, ge, err
 	}
 	//transpose
 	x, y, err := s.transpositionModel.Transpose(transpositionSeed)
 	if err != nil {
-		return s.metModel, err
+		return s.metModel, ge, err
 	}
 	//compute offset from control specification
 	offset := s.control.ComputeOffset(ge.StartTime)
 	//update met storm name
 	err = s.metModel.UpdateStormName(ge.Name)
 	if err != nil {
-		return s.metModel, err
+		return s.metModel, ge, err
 	}
 	//update storm center
 	err = s.metModel.UpdateStormCenter(fmt.Sprintf("%v", x), fmt.Sprintf("%v", y))
 	if err != nil {
-		return s.metModel, err
+		return s.metModel, ge, err
 	}
 	//update timeshift
 	err = s.metModel.UpdateTimeShift(fmt.Sprintf("%v", offset))
 	if err != nil {
-		return s.metModel, err
+		return s.metModel, ge, err
 	}
-	return s.metModel, nil
+	return s.metModel, ge, nil
+}
+func (s Simulation) UploadGridFile(gori plugin.ResourceInfo, pge hms.PrecipGridEvent) error {
+	return s.gridFile.UploadToS3(gori, pge)
 }

@@ -133,7 +133,7 @@ func computePayload(payload plugin.ModelPayload) error {
 		return err
 	}
 	//compute simulation for given seed set
-	m, err := sim.Compute(ss)
+	m, ge, err := sim.Compute(ss)
 	if err != nil {
 		logError(err, payload)
 		return err
@@ -144,12 +144,83 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
-	//upload updated files.
-	err = plugin.UpLoadFile(payload.Outputs[0].ResourceInfo, mbytes)
-	if err != nil {
+	//find the right resource locations
+	var mori plugin.ResourceInfo //met file output
+	var dori plugin.ResourceInfo //dss file output
+	var gori plugin.ResourceInfo //grid file output
+	foundMori := false
+	foundDori := false
+	foundGori := false
+	for _, rfd := range payload.Outputs {
+		if strings.Contains(rfd.FileName, ".grid") {
+			gori = rfd.ResourceInfo
+			foundGori = true
+		}
+		if strings.Contains(rfd.FileName, ".met") {
+			mori = rfd.ResourceInfo
+			foundMori = true
+		}
+		if strings.Contains(rfd.FileName, ".dss") {
+			dori = rfd.ResourceInfo
+			foundDori = true
+		}
+	}
+	//upload updated met files.
+	if foundMori {
+		err = plugin.UpLoadFile(mori, mbytes)
+		if err != nil {
+			logError(err, payload)
+			return err
+		}
+	} else {
+		err := fmt.Errorf("could not find output met file destination")
 		logError(err, payload)
 		return err
 	}
+
+	//upload correct dss file
+	if foundDori {
+		dssFileName, err := ge.OriginalDSSFile()
+		if err != nil {
+			logError(err, payload)
+			return err
+		}
+		//leverage the hms project directory structure
+		projectPathParts := strings.Split(metRI.Path, "\\")
+		dssPath := ""
+		for i := 0; i < len(projectPathParts)-1; i++ {
+			dssPath = fmt.Sprintf("%v\\%v", dssPath, projectPathParts[i])
+		}
+		dssPath = fmt.Sprintf("%v\\%v", dssPath, dssFileName)
+		projectRI := plugin.ResourceInfo{
+			Store: metRI.Store,
+			Root:  metRI.Root,
+			Path:  dssPath,
+		}
+		err = ge.DownloadAndUploadDSSFile(projectRI, dori)
+		if err != nil {
+			logError(err, payload)
+			return err
+		}
+	} else {
+		err := fmt.Errorf("could not find output storms.dss file destination")
+		logError(err, payload)
+		return err
+	}
+
+	//upload updated grid files.
+	if foundGori {
+		err = sim.UploadGridFile(gori, ge)
+		if err != nil {
+			logError(err, payload)
+			return err
+		}
+	} else {
+		err := fmt.Errorf("could not find output grid file destination")
+		logError(err, payload)
+		return err
+	}
+
 	plugin.Log(plugin.Message{
 		Status:    plugin.SUCCEEDED,
 		Progress:  100,

@@ -90,7 +90,7 @@ func TestSimulationCompute(t *testing.T) {
 		t.Fail()
 	}
 	//compute simulation for given seed set
-	m, err := sim.Compute(ss)
+	m, _, err := sim.Compute(ss)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()

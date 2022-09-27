@@ -1,6 +1,7 @@
 package hms
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -44,6 +45,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 	var gridLines = make([]string, 0)
 	var managerLines = make([]string, 0)
 	var gridFound = false
+	var gridManagerFound = false
 	var isPrecipGrid = false
 	for _, l := range lines {
 		if gridManagerFound {
@@ -104,19 +106,19 @@ func (gf GridFile) SelectEvent(seed int64) (PrecipGridEvent, error) {
 	return gf.Events[idx], nil
 }
 func (pge PrecipGridEvent) DownloadAndUploadDSSFile(dssResourceInfo plugin.ResourceInfo, outputResourceInfo plugin.ResourceInfo) error {
-
-	relativePath := ""
-	for _, l := range pge.Lines {
-		if strings.Contains(l, DssFileNameKeyword) {
-			relativePath = strings.TrimLeft(l, DssFileNameKeyword)
-		}
-	}
-	//convert relative path to absolute path?
-	dssResourceInfo.Path = relativePath
 	bytes, _ := plugin.DownloadObject(dssResourceInfo)
 	//output destination should be "/data/Storm.dss"
 	plugin.UpLoadFile(outputResourceInfo, bytes)
 	return nil
+}
+func (pge *PrecipGridEvent) OriginalDSSFile() (string, error) {
+	for _, l := range pge.Lines {
+		if strings.Contains(l, DssFileNameKeyword) {
+			output := strings.Split(l, DssFileNameKeyword)[1]
+			return output, nil
+		}
+	}
+	return "", errors.New("did not find the dss file name keyword")
 }
 func (pge *PrecipGridEvent) UpdateDSSFile() error {
 	for idx, l := range pge.Lines {
@@ -125,4 +127,15 @@ func (pge *PrecipGridEvent) UpdateDSSFile() error {
 		}
 	}
 	return nil
+}
+func (gf GridFile) UploadToS3(outputResourceInfo plugin.ResourceInfo, precipEvent PrecipGridEvent) error {
+	b := make([]byte, 0)
+	for _, l := range gf.GridManager.Lines {
+		b = append(b, l...)
+	}
+	b = append(b, "\r\n"...)
+	for _, l := range precipEvent.Lines {
+		b = append(b, l...)
+	}
+	return plugin.UpLoadFile(outputResourceInfo, b)
 }
