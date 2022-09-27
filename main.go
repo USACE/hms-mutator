@@ -47,8 +47,8 @@ func main() {
 }
 func computePayload(payload plugin.ModelPayload) error {
 
-	if len(payload.Outputs) != 1 {
-		err := errors.New(fmt.Sprint("expecting 1 outputs to be defined, found", len(payload.Outputs)))
+	if len(payload.Outputs) != 3 {
+		err := errors.New(fmt.Sprint("expecting 3 outputs to be defined, found", len(payload.Outputs)))
 		logError(err, payload)
 		return err
 	}
