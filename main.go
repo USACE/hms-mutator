@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/transposition"
 	"github.com/usace/wat-go-sdk/plugin"
 )
@@ -47,27 +48,33 @@ func main() {
 }
 func computePayload(payload plugin.ModelPayload) error {
 
-	if len(payload.Outputs) != 3 {
-		err := errors.New(fmt.Sprint("expecting 3 outputs to be defined, found", len(payload.Outputs)))
+	if len(payload.Outputs) < 3 {
+		err := errors.New(fmt.Sprint("expecting at least 3 outputs to be defined, found", len(payload.Outputs)))
 		logError(err, payload)
 		return err
 	}
-	if len(payload.Inputs) != 5 {
-		err := errors.New(fmt.Sprint("expecting 5 input to be defined, found ", len(payload.Inputs)))
+	if len(payload.Inputs) < 5 {
+		err := errors.New(fmt.Sprint("expecting at least 5 inputs to be defined, found ", len(payload.Inputs)))
 		logError(err, payload)
 		return err
 	}
+	var mcaRI plugin.ResourceInfo
 	var eventConfigRI plugin.ResourceInfo
 	var gridRI plugin.ResourceInfo
 	var metRI plugin.ResourceInfo
 	var gpkgRI plugin.ResourceInfo
 	var controlRI plugin.ResourceInfo
+	foundMca := false
 	foundEventConfig := false
 	foundGrid := false
 	foundMet := false
 	foundGpkg := false
 	foundControl := false
 	for _, rfd := range payload.Inputs {
+		if strings.Contains(rfd.FileName, ".mca") {
+			mcaRI = rfd.ResourceInfo
+			foundMca = true
+		}
 		if strings.Contains(rfd.FileName, "eventconfiguration.json") {
 			eventConfigRI = rfd.ResourceInfo
 			foundEventConfig = true
@@ -93,6 +100,17 @@ func computePayload(payload plugin.ModelPayload) error {
 		err := fmt.Errorf("could not find event configuration to find the proper seeds to run sst")
 		logError(err, payload)
 		return err
+	}
+	if !foundMca {
+		msg := "no *.mca file detected, variability is only reflected in storm and storm positioning."
+		plugin.Log(plugin.Message{
+			Status:    plugin.COMPUTING,
+			Progress:  0,
+			Level:     plugin.INFO,
+			Message:   msg,
+			Sender:    pluginName,
+			PayloadId: payload.Id,
+		})
 	}
 	if !foundGrid {
 		err := fmt.Errorf("could not find grid file for storm definitions")
@@ -138,6 +156,16 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
+	//update mca file if present
+	mca := hms.Mca{}
+	if foundMca {
+		mca, err := hms.ReadMca(mcaRI)
+		if err != nil {
+			logError(err, payload)
+			return err
+		}
+		mca.UpdateSeed(ss.EventSeed)
+	}
 	//get met file bytes
 	mbytes, err := m.WriteBytes()
 	if err != nil {
@@ -145,10 +173,12 @@ func computePayload(payload plugin.ModelPayload) error {
 		return err
 	}
 	//find the right resource locations
-	var mori plugin.ResourceInfo //met file output
-	var dori plugin.ResourceInfo //dss file output
-	var gori plugin.ResourceInfo //grid file output
+	var mori plugin.ResourceInfo  //met file output
+	var mcori plugin.ResourceInfo //met file output
+	var dori plugin.ResourceInfo  //dss file output
+	var gori plugin.ResourceInfo  //grid file output
 	foundMori := false
+	foundMcori := false
 	foundDori := false
 	foundGori := false
 	for _, rfd := range payload.Outputs {
@@ -164,6 +194,12 @@ func computePayload(payload plugin.ModelPayload) error {
 			dori = rfd.ResourceInfo
 			foundDori = true
 		}
+		if foundMca {
+			if strings.Contains(rfd.FileName, ".mca") {
+				mcori = rfd.ResourceInfo
+				foundMcori = true
+			}
+		}
 	}
 	//upload updated met files.
 	if foundMori {
@@ -174,6 +210,12 @@ func computePayload(payload plugin.ModelPayload) error {
 		}
 	} else {
 		err := fmt.Errorf("could not find output met file destination")
+		logError(err, payload)
+		return err
+	}
+	//if foundMca is true, then foundMcori might be true... upload updated mca file if foundMcori is true.
+	if foundMcori { //optional
+		err = mca.UploadToS3(mcori)
 		logError(err, payload)
 		return err
 	}
