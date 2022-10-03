@@ -48,6 +48,10 @@ func ReadMca(mcaResource plugin.ResourceInfo) (Mca, error) {
 		realizationIndex = seedStringIndex
 		seedStringIndex = seedStringIndex + 1
 		hasRealizations = true
+	} else {
+		//force to 1
+		//@TODO allow user to specify they want more than one?
+		lines[realizationIndex] = fmt.Sprintf("%v%v", RealizationsKeyword, 1)
 	}
 	mcaModel := Mca{
 		SeedStringIndex:  seedStringIndex,
