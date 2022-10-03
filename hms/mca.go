@@ -9,10 +9,14 @@ import (
 )
 
 var SeedKeyword string = "     Seed Value: "
+var RealizationsKeyword string = "     Number Of Realizations: "
+var DefaultRealizationsValue int = 1
 
 type Mca struct {
-	SeedStringIndex int
-	Lines           []string
+	SeedStringIndex  int
+	HasRealizations  bool
+	RealizationIndex int
+	Lines            []string
 }
 
 func ReadMca(mcaResource plugin.ResourceInfo) (Mca, error) {
@@ -25,16 +29,31 @@ func ReadMca(mcaResource plugin.ResourceInfo) (Mca, error) {
 	mcafilestring := string(bytes)
 	lines := strings.Split(mcafilestring, "\r\n") //maybe rn?
 	seedFound := false
+	hasRealizations := false
 	seedStringIndex := 0
+	realizationIndex := 0
 	for idx, l := range lines {
 		if strings.Contains(l, SeedKeyword) {
 			seedFound = true
 			seedStringIndex = idx
 		}
+		if strings.Contains(l, RealizationsKeyword) {
+			hasRealizations = true
+			realizationIndex = idx
+		}
+	}
+	if !hasRealizations { //if the file doesnt specifiy realizations force it to be 1.
+		lines = append(lines[:seedStringIndex+1], lines[seedStringIndex:]...)
+		lines[seedStringIndex] = fmt.Sprintf("%v%v", RealizationsKeyword, 1)
+		realizationIndex = seedStringIndex
+		seedStringIndex = seedStringIndex + 1
+		hasRealizations = true
 	}
 	mcaModel := Mca{
-		SeedStringIndex: seedStringIndex,
-		Lines:           lines,
+		SeedStringIndex:  seedStringIndex,
+		HasRealizations:  hasRealizations,
+		RealizationIndex: realizationIndex,
+		Lines:            lines,
 	}
 	if seedFound {
 		return mcaModel, nil
@@ -44,6 +63,10 @@ func ReadMca(mcaResource plugin.ResourceInfo) (Mca, error) {
 }
 func (mf *Mca) UpdateSeed(seed int64) error {
 	mf.Lines[mf.SeedStringIndex] = fmt.Sprintf("%v%v", SeedKeyword, seed)
+	return nil
+}
+func (mf *Mca) UpdateRealizations(count int) error {
+	mf.Lines[mf.RealizationIndex] = fmt.Sprintf("%v%v", RealizationsKeyword, count)
 	return nil
 }
 func (mf Mca) UploadToS3(outputResourceInfo plugin.ResourceInfo) error {

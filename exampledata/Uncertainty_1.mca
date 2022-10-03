@@ -1,0 +1,129 @@
+Monte Carlo Analysis: Uncertainty 1
+     Description: 
+     Version: 4.11
+     Log File: Uncertainty_1.log
+     DSS File: Uncertainty_1.dss
+     Last Modified Date: 18 May 2022
+     Last Modified Time: 19:14:35
+
+     Basin Model Name: Indian Creek 2014
+     Met Model Name: HMR52
+
+     Time Zone ID: America/Chicago
+     Time Interval: 60
+
+     Seed Value: 1652897650914
+     Time-Series Output: Save Selected
+     Time Series Results Manager Start:
+     Time Series Results Manager End:
+
+     Analysis Variable: 
+     Target Name: Precipitation Parameters
+     Method Category: Precip
+     Method: HMR-52
+     Parameter Name: Storm Center X-coordinate
+     Instance: 0
+     Minimum Allowed Value: -100000000.0000
+     Maximum Allowed Value: 100000000.0000
+
+     Sampling Method: PDF
+     Probability Distribution: Uniform
+     Shift: 0.000
+     Lower Limit: 
+     Upper Limit: 
+     End Probability Distribution: 
+     End Sampling Method:
+     End Analysis Variable:
+
+     Analysis Variable: 
+     Target Name: Precipitation Parameters
+     Method Category: Precip
+     Method: HMR-52
+     Parameter Name: Storm Center Y-coordinate
+     Instance: 0
+     Minimum Allowed Value: -100000000.0000
+     Maximum Allowed Value: 100000000.0000
+
+     Sampling Method: PDF
+     Probability Distribution: Uniform
+     Shift: 0.000
+     Lower Limit: 
+     Upper Limit: 
+     End Probability Distribution: 
+     End Sampling Method:
+     End Analysis Variable:
+
+     Analysis Variable: 
+     Target Name: East Indian Cr
+     Method Category: Loss Rate
+     Method: Deficit Constant
+     Parameter Name: Initial Deficit
+     Instance: 0
+     Minimum Allowed Value: 0.0000
+     Maximum Allowed Value: 39.3701
+
+     Sampling Method: Monthly PDF
+     Month: January
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: February
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: March
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: April
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: May
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: June
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: July
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: August
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: September
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: October
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: November
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     Month: December
+     Probability Distribution: Empirical
+     Shift: 0.000
+     Probability Table Name: 
+     End Probability Distribution: 
+     End Sampling Method:
+     End Analysis Variable:
+
+End Monte Carlo Analysis: Uncertainty 1

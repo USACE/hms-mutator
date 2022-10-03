@@ -21,6 +21,18 @@ func TestReadMetModel(t *testing.T) {
 		t.Fail()
 	}
 }
+func TestReadMca(t *testing.T) {
+	path := "../exampledata/Uncertainty_1.mca"
+	ri := plugin.ResourceInfo{
+		Store: plugin.LOCAL,
+		Root:  "workspaces/hms-mutator/",
+		Path:  path,
+	}
+	m, _ := ReadMca(ri)
+	if !m.HasRealizations {
+		t.Fail()
+	}
+}
 func TestReadManipulateWriteMetModel(t *testing.T) {
 	path := "../exampledata/AORC.met"
 	ri := plugin.ResourceInfo{
