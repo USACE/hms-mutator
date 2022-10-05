@@ -84,7 +84,7 @@ func TestControlOffset(t *testing.T) {
 	}
 }
 func TestReadGrid(t *testing.T) {
-	path := "../exampledata/WhiteRiver_Muncie.grid"
+	path := "../exampledata/IC_Transpose_eric.grid"
 	ri := plugin.ResourceInfo{
 		Store: plugin.LOCAL,
 		Root:  "workspaces/hms-mutator/",
