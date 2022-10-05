@@ -244,6 +244,8 @@ func computePayload(payload plugin.ModelPayload) error {
 			logError(err, payload)
 			return err
 		}
+		//update the dss file output to match the ouptut destination
+		ge.UpdateDSSFile(dori.Path)
 	} else {
 		err := fmt.Errorf("could not find output storms.dss file destination")
 		logError(err, payload)

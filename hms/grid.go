@@ -22,11 +22,11 @@ type PrecipGridEvent struct {
 	StartTime string //parse DDMMMYYYY:HHMM //24 hour clocktime
 	Lines     []string
 }
-type GridManager struct {
+type GridFileInfo struct {
 	Lines []string
 }
 type GridFile struct {
-	GridManager
+	GridFileInfo
 	Events []PrecipGridEvent
 }
 
@@ -38,46 +38,59 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 		return GridFile{}, err
 	}
 	gridstring := string(bytes)
-	lines := strings.Split(gridstring, "\r\n") //maybe rn?
+	lines := strings.Split(gridstring, "\n") //maybe rn?
 	grids := make([]PrecipGridEvent, 0)
 	var precipGrid PrecipGridEvent
-	var gridManager GridManager
+	var gridFileInfo GridFileInfo
+	var precipGridLines = make([]string, 0)
 	var gridLines = make([]string, 0)
-	var managerLines = make([]string, 0)
 	var gridFound = false
-	var gridManagerFound = false
 	var isPrecipGrid = false
 	for _, l := range lines {
-		if gridManagerFound {
-			managerLines = append(managerLines, l)
-			if strings.Contains(l, GridEndKeyword) {
-				gridManagerFound = false
-				gridManager = GridManager{Lines: managerLines}
-			}
-		}
-		if gridFound {
-			gridLines = append(gridLines, l)
-
-		}
-		if strings.Contains(l, GridManagerKeyword) {
-			gridManagerFound = true
-			managerLines = make([]string, 0)
-			managerLines = append(managerLines, l)
+		if l == "" {
+			continue
 		}
 		if strings.Contains(l, GridStartKeyword) {
 			gridFound = true
-			gridLines = make([]string, 0)
-			gridLines = append(gridLines, l)
-			isPrecipGrid = false
+			precipGridLines = make([]string, 0)
+
 			name := strings.TrimLeft(l, GridStartKeyword)
+			//wont know it is precip for one more line...
+			//so get the name just in case.
+			//add the first line just in case.
+			isPrecipGrid = false
 			precipGrid = PrecipGridEvent{Name: name}
+			precipGridLines = append(precipGridLines, l)
 		}
 		if strings.Contains(l, GridTypeKeyword) {
 			gridType := strings.TrimLeft(l, GridTypeKeyword)
 			if gridType == PrecipitationKeyword {
 				isPrecipGrid = true
+				//pop the last line off of the gridLines because it is a precip grid not a different grid type.
+				gridLines = gridLines[:len(gridLines)-1]
 			}
 		}
+		if gridFound {
+			if isPrecipGrid {
+				precipGridLines = append(precipGridLines, l)
+			} else {
+				gridLines = append(gridLines, l) //adding everythign that is a grid.
+			}
+
+		} else {
+			gridLines = append(gridLines, l) //adding everything that isnt a precip grid too!
+		}
+		//check after adding to include grid end in the data and to set the precip grids into the grid list.
+		if strings.Contains(l, GridEndKeyword) {
+			if gridFound {
+				gridFound = false
+				if isPrecipGrid {
+					precipGrid.Lines = precipGridLines
+					grids = append(grids, precipGrid)
+				}
+			}
+		}
+
 		if strings.Contains(l, DssPathNameKeyword) {
 			pathName := strings.TrimLeft(l, DssPathNameKeyword)
 			parts := strings.Split(pathName, "/")
@@ -87,15 +100,10 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 				precipGrid.StartTime = strings.Replace(precipGrid.StartTime, "2400", "2359", 1)
 			}
 		}
-		if strings.Contains(l, GridEndKeyword) {
-			gridFound = false
-			if isPrecipGrid {
-				precipGrid.Lines = gridLines
-				grids = append(grids, precipGrid)
-			}
-		}
+
 	}
-	return GridFile{GridManager: gridManager, Events: grids}, nil
+	gridFileInfo.Lines = gridLines
+	return GridFile{GridFileInfo: gridFileInfo, Events: grids}, nil
 }
 
 func (gf GridFile) SelectEvent(seed int64) (PrecipGridEvent, error) {
@@ -120,22 +128,31 @@ func (pge *PrecipGridEvent) OriginalDSSFile() (string, error) {
 	}
 	return "", errors.New("did not find the dss file name keyword")
 }
-func (pge *PrecipGridEvent) UpdateDSSFile() error {
+func (pge *PrecipGridEvent) UpdateDSSFile(path string) error {
 	for idx, l := range pge.Lines {
 		if strings.Contains(l, DssFileNameKeyword) {
-			pge.Lines[idx] = fmt.Sprintf("%v%v", DssFileNameKeyword, "/data/Storm.dss")
+			pge.Lines[idx] = fmt.Sprintf("%v%v", DssFileNameKeyword, path)
 		}
 	}
 	return nil
 }
-func (gf GridFile) UploadToS3(outputResourceInfo plugin.ResourceInfo, precipEvent PrecipGridEvent) error {
+func (gf GridFile) toBytes(precipEvent PrecipGridEvent) []byte {
 	b := make([]byte, 0)
-	for _, l := range gf.GridManager.Lines {
+	for _, l := range gf.GridFileInfo.Lines {
 		b = append(b, l...)
+		if l == GridEndKeyword {
+			b = append(b, "\r\n"...)
+		}
+		b = append(b, "\r\n"...)
 	}
-	b = append(b, "\r\n"...)
+
 	for _, l := range precipEvent.Lines {
 		b = append(b, l...)
+		b = append(b, "\r\n"...)
 	}
+	return b
+}
+func (gf GridFile) Write(outputResourceInfo plugin.ResourceInfo, precipEvent PrecipGridEvent) error {
+	b := gf.toBytes(precipEvent)
 	return plugin.UpLoadFile(outputResourceInfo, b)
 }

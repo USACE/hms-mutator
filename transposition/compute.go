@@ -78,5 +78,5 @@ func (s *Simulation) Compute(seeds plugin.SeedSet) (hms.Met, hms.PrecipGridEvent
 	return s.metModel, ge, nil
 }
 func (s Simulation) UploadGridFile(gori plugin.ResourceInfo, pge hms.PrecipGridEvent) error {
-	return s.gridFile.UploadToS3(gori, pge)
+	return s.gridFile.Write(gori, pge)
 }

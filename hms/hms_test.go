@@ -109,3 +109,18 @@ func TestSelectGrid(t *testing.T) {
 		fmt.Printf("%v: %v\n", i, e.Name)
 	}
 }
+
+func TestReadSelectUpdateWriteGrid(t *testing.T) {
+	path := "../exampledata/KanawhaHMS.grid"
+	ri := plugin.ResourceInfo{
+		Store: plugin.LOCAL,
+		Root:  "workspaces/hms-mutator/",
+		Path:  path,
+	}
+	g, _ := ReadGrid(ri)
+	rnd := rand.New(rand.NewSource(1234))
+	e, _ := g.SelectEvent(rnd.Int63())
+	_ = e.UpdateDSSFile("data/storms.dss")
+	s := string(g.toBytes(e))
+	fmt.Println(s)
+}
