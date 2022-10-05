@@ -53,8 +53,8 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
-	if len(payload.Inputs) < 5 {
-		err := errors.New(fmt.Sprint("expecting at least 5 inputs to be defined, found ", len(payload.Inputs)))
+	if len(payload.Inputs) < 6 {
+		err := errors.New(fmt.Sprint("expecting at least 6 inputs to be defined, found ", len(payload.Inputs)))
 		logError(err, payload)
 		return err
 	}
@@ -62,13 +62,15 @@ func computePayload(payload plugin.ModelPayload) error {
 	var eventConfigRI plugin.ResourceInfo
 	var gridRI plugin.ResourceInfo
 	var metRI plugin.ResourceInfo
-	var gpkgRI plugin.ResourceInfo
+	var trgpkgRI plugin.ResourceInfo
+	var wbgpkgRI plugin.ResourceInfo
 	var controlRI plugin.ResourceInfo
 	foundMca := false
 	foundEventConfig := false
 	foundGrid := false
 	foundMet := false
-	foundGpkg := false
+	foundTrGpkg := false
+	foundWbGpkg := false
 	foundControl := false
 	for _, rfd := range payload.Inputs {
 		if strings.Contains(rfd.FileName, ".mca") {
@@ -87,9 +89,13 @@ func computePayload(payload plugin.ModelPayload) error {
 			metRI = rfd.ResourceInfo
 			foundMet = true
 		}
-		if strings.Contains(rfd.FileName, ".gpkg") {
-			gpkgRI = rfd.ResourceInfo
-			foundGpkg = true
+		if strings.Contains(rfd.FileName, "TranspositionRegion.gpkg") {
+			trgpkgRI = rfd.ResourceInfo
+			foundTrGpkg = true
+		}
+		if strings.Contains(rfd.FileName, "WatershedBoundary.gpkg") {
+			wbgpkgRI = rfd.ResourceInfo
+			foundWbGpkg = true
 		}
 		if strings.Contains(rfd.FileName, ".control") {
 			controlRI = rfd.ResourceInfo
@@ -122,8 +128,13 @@ func computePayload(payload plugin.ModelPayload) error {
 		logError(err, payload)
 		return err
 	}
-	if !foundGpkg {
-		err := fmt.Errorf("could not find gpkg file for transposition region")
+	if !foundTrGpkg {
+		err := fmt.Errorf("could not find gpkg file for transposition region TranspositionBoundary.gpkg")
+		logError(err, payload)
+		return err
+	}
+	if !foundWbGpkg {
+		err := fmt.Errorf("could not find gpkg file for watershed boundary WatershedBoundary.gpkg")
 		logError(err, payload)
 		return err
 	}
@@ -145,7 +156,7 @@ func computePayload(payload plugin.ModelPayload) error {
 		return err
 	}
 	//initialize simulation
-	sim, err := transposition.InitSimulation(gpkgRI, metRI, gridRI, controlRI)
+	sim, err := transposition.InitSimulation(trgpkgRI, wbgpkgRI, metRI, gridRI, controlRI)
 	if err != nil {
 		logError(err, payload)
 		return err

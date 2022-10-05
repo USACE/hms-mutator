@@ -106,6 +106,15 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 			shiftContained = transpositionRegion.Geometry().Contains(shiftedWatershedBoundary)
 			if shiftContained {
 				return xval, yval, nil
+			} else {
+				plugin.Log(plugin.Message{
+					Status:    plugin.COMPUTING,
+					Progress:  50,
+					Level:     plugin.INFO,
+					Message:   fmt.Sprintf("storm center (%v,%v) rejected due to possible null data\n", xval, yval),
+					Sender:    "hms-mutator",
+					PayloadId: "unknown payload id",
+				})
 			}
 		}
 	}

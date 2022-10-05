@@ -56,6 +56,12 @@ func TestSimulationCompute(t *testing.T) {
 		Root:  "workspaces/hms-mutator/",
 		Path:  path,
 	}
+	wpath := "../exampledata/watershedBoundary.gpkg"
+	wgpkgRI := plugin.ResourceInfo{
+		Store: plugin.LOCAL,
+		Root:  "workspaces/hms-mutator/",
+		Path:  wpath,
+	}
 	mpath := "../exampledata/AORC.met"
 	metRI := plugin.ResourceInfo{
 		Store: plugin.LOCAL,
@@ -92,7 +98,7 @@ func TestSimulationCompute(t *testing.T) {
 		t.Fail()
 	}
 	//initialize simulation
-	sim, err := InitSimulation(gpkgRI, metRI, gridRI, controlRI)
+	sim, err := InitSimulation(gpkgRI, wgpkgRI, metRI, gridRI, controlRI)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()

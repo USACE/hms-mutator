@@ -31,14 +31,29 @@ inputs:
       store: Local
       root: /workspaces/hms-mutator/
       path: ../exampledata/WhiteRiver_Muncie.grid
-  - filename: Muncie_TranspositionRegion.gpkg
+  - filename: TranspositionRegion.gpkg
     resource_info:
       store: Local
       root: /workspaces/hms-mutator/
       path: ../exampledata/muncie_simple_transposition_region.gpkg
+  - filename: WatershedBoundary.gpkg
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/watershedBoundary.gpkg
 outputs:
   - filename: AORC.met
     resource_info:
       store: Local
       root: /workspaces/hms-mutator/
       path: ../exampledata/runs/event_0/AORC.met
+  - filename: WhiteRiver_Muncie.grid
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/runs/event_0/WhiteRiver_Muncie.grid
+  - filename: /data/Storms.dss
+    resource_info:
+      store: Local
+      root: /workspaces/hms-mutator/
+      path: ../exampledata/runs/event_0/data/Storms.dss

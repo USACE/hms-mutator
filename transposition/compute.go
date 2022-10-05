@@ -15,7 +15,7 @@ type Simulation struct {
 	control            hms.Control
 }
 
-func InitSimulation(gpkgRI plugin.ResourceInfo, metRI plugin.ResourceInfo, gridRI plugin.ResourceInfo, controlRI plugin.ResourceInfo) (Simulation, error) {
+func InitSimulation(trgpkgRI plugin.ResourceInfo, wbgpkgRI plugin.ResourceInfo, metRI plugin.ResourceInfo, gridRI plugin.ResourceInfo, controlRI plugin.ResourceInfo) (Simulation, error) {
 	s := Simulation{}
 	//read grid file
 	gf, err := hms.ReadGrid(gridRI)
@@ -24,7 +24,7 @@ func InitSimulation(gpkgRI plugin.ResourceInfo, metRI plugin.ResourceInfo, gridR
 	}
 	s.gridFile = gf
 	//initialize transposition region
-	t, err := InitModel(gpkgRI, gpkgRI) //TODO fix this.
+	t, err := InitModel(trgpkgRI, wbgpkgRI) //TODO fix this.
 	if err != nil {
 		return s, err
 	}
