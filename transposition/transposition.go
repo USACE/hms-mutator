@@ -66,11 +66,16 @@ func InitModel(transpositionRegion plugin.ResourceInfo, watershedBoundary plugin
 func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
 	layer := t.transpositionRegionDS.LayerByIndex(0)
-	f := layer.Feature(1)
-	if f.IsNull() {
+	transpositionRegion := layer.Feature(1)
+	if transpositionRegion.IsNull() {
 		fmt.Println("im null...")
 	}
-	//fmt.Println(f.Geometry().Envelope())
+
+	wlayer := t.watershedBoundaryDS.LayerByIndex(0)
+	wf := wlayer.Feature(1)
+	if wf.IsNull() {
+		fmt.Println("im null...")
+	}
 	ref := layer.SpatialReference()
 	xOffset := 0.0
 	yOffset := 0.0
@@ -82,24 +87,24 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 		yval := t.yDist.InvCDF(yrand.Float64())
 
 		//validate if in transposition polygon, iterate until it is
-		geom, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)\n", xval, yval), ref)
+		newCenter, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)\n", xval, yval), ref)
 		if err != nil {
 			return xval, yval, err
 		}
 		//fmt.Println(geom.Envelope())
-		if f.Geometry().Contains(geom) {
+		if transpositionRegion.Geometry().Contains(newCenter) {
 			xOffset = xval - pge.CenterX
 			yOffset = yval - pge.CenterY
 			fmt.Printf("Offset(x,y): (%v,%v)", xOffset, yOffset)
-			shiftSuccessful := false     //TODO switch to false and test.
-			geom := f.Geometry().Clone() //shift
-			for i := 0; i < geom.PointCount(); i++ {
-				px, py, pz := geom.Point(i)
-				geom.SetPoint(i, px+xOffset, py+yOffset, pz) //does this work or does it insert?
+			shiftContained := false                           //TODO switch to false and test.
+			shiftedWatershedBoundary := wf.Geometry().Clone() //shift watershed boundary
+			for i := 0; i < shiftedWatershedBoundary.PointCount(); i++ {
+				px, py, pz := shiftedWatershedBoundary.Point(i)
+				shiftedWatershedBoundary.SetPoint(i, px-xOffset, py-yOffset, pz) //does this work or does it insert?
 			}
-			//need watershed boundary.
-			shiftSuccessful = true
-			if shiftSuccessful {
+			//check shifted watershed boundary is contained in transposition region
+			shiftContained = transpositionRegion.Geometry().Contains(shiftedWatershedBoundary)
+			if shiftContained {
 				return xval, yval, nil
 			}
 		}
