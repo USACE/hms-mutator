@@ -22,6 +22,8 @@ var GridStormCenterYKeyword string = "     Storm Center Y: "
 type PrecipGridEvent struct {
 	Name      string
 	StartTime string //parse DDMMMYYYY:HHMM //24 hour clocktime
+	CenterX   string //maybe float64?
+	CenterY   string //maybe float64?
 	Lines     []string
 }
 type GridFileInfo struct {
@@ -48,6 +50,8 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 	var gridLines = make([]string, 0)
 	var gridFound = false
 	var isPrecipGrid = false
+	var foundX = false
+	var foundY = false
 	for _, l := range lines {
 		l = strings.Replace(l, "\r", "", -1) //remove returns if they exist in the line.
 		if l == "" {
@@ -69,12 +73,22 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 			gridType := strings.TrimLeft(l, GridTypeKeyword)
 			if gridType == PrecipitationKeyword {
 				isPrecipGrid = true
+				foundX = false
+				foundY = false
 				//pop the last line off of the gridLines because it is a precip grid not a different grid type.
 				gridLines = gridLines[:len(gridLines)-1]
 			}
 		}
 		if gridFound {
 			if isPrecipGrid {
+				if strings.Contains(l, GridStormCenterXKeyword) {
+					foundX = true
+					precipGrid.CenterX = strings.TrimLeft(l, GridStormCenterXKeyword)
+				}
+				if strings.Contains(l, GridStormCenterYKeyword) {
+					foundY = true
+					precipGrid.CenterY = strings.TrimLeft(l, GridStormCenterYKeyword)
+				}
 				precipGridLines = append(precipGridLines, l)
 			} else {
 				gridLines = append(gridLines, l) //adding everythign that is a grid.
@@ -88,8 +102,20 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 			if gridFound {
 				gridFound = false
 				if isPrecipGrid {
-					precipGrid.Lines = precipGridLines
-					grids = append(grids, precipGrid)
+					if foundX && foundY {
+						precipGrid.Lines = precipGridLines
+						grids = append(grids, precipGrid)
+					} else {
+						plugin.Log(plugin.Message{
+							Status:    plugin.COMPUTING,
+							Progress:  10,
+							Level:     plugin.INFO,
+							Message:   fmt.Sprintf("Found grid %v but found no x and y center not adding grid to grid list.\r\n", precipGrid.Name),
+							Sender:    "hms-mutator",
+							PayloadId: "unknown payload id",
+						})
+					}
+
 				}
 			}
 		}
@@ -106,6 +132,9 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 
 	}
 	gridFileInfo.Lines = gridLines
+	if len(grids) == 0 {
+		return GridFile{GridFileInfo: gridFileInfo, Events: grids}, errors.New("Found no grids with x and y centers specified, please specify storm centers for transposition.")
+	}
 	return GridFile{GridFileInfo: gridFileInfo, Events: grids}, nil
 }
 
