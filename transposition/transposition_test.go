@@ -38,8 +38,8 @@ func TestSampleLocations(t *testing.T) {
 	ge := hms.PrecipGridEvent{
 		Name:      "test",
 		StartTime: "test",
-		CenterX:   "1",
-		CenterY:   "2",
+		CenterX:   1.0,
+		CenterY:   2.0,
 		Lines:     []string{},
 	}
 	fmt.Printf("id,x,y\n")

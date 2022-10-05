@@ -64,12 +64,15 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 	}
 	//fmt.Println(f.Geometry().Envelope())
 	ref := layer.SpatialReference()
+	xOffset := 0.0
+	yOffset := 0.0
 
 	for {
 		xrand := rand.New(rand.NewSource(r.Int63()))
 		yrand := rand.New(rand.NewSource(r.Int63()))
 		xval := t.xDist.InvCDF(xrand.Float64())
 		yval := t.yDist.InvCDF(yrand.Float64())
+
 		//validate if in transposition polygon, iterate until it is
 		geom, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)", xval, yval), ref)
 		//fmt.Println(geom.ToWKT())
@@ -79,7 +82,15 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 		}
 		//fmt.Println(geom.Envelope())
 		if f.Geometry().Contains(geom) {
-			return xval, yval, nil
+			xOffset = xval - pge.CenterX
+			yOffset = yval - pge.CenterY
+			fmt.Printf("Offset(x,y): (%v,%v)", xOffset, yOffset)
+			shiftSuccessful := true //TODO switch to false and test.
+			//shift
+			if shiftSuccessful {
+				return xval, yval, nil
+			}
+
 		}
 	}
 }

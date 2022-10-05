@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 
 	"github.com/usace/wat-go-sdk/plugin"
@@ -21,9 +22,9 @@ var GridStormCenterYKeyword string = "     Storm Center Y: "
 
 type PrecipGridEvent struct {
 	Name      string
-	StartTime string //parse DDMMMYYYY:HHMM //24 hour clocktime
-	CenterX   string //maybe float64?
-	CenterY   string //maybe float64?
+	StartTime string  //parse DDMMMYYYY:HHMM //24 hour clocktime
+	CenterX   float64 //maybe float64?
+	CenterY   float64 //maybe float64?
 	Lines     []string
 }
 type GridFileInfo struct {
@@ -82,12 +83,24 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 		if gridFound {
 			if isPrecipGrid {
 				if strings.Contains(l, GridStormCenterXKeyword) {
-					foundX = true
-					precipGrid.CenterX = strings.TrimLeft(l, GridStormCenterXKeyword)
+					centerxstring := strings.TrimLeft(l, GridStormCenterXKeyword)
+					x, err := strconv.ParseFloat(centerxstring, 64)
+					if err != nil {
+						foundX = false
+					} else {
+						foundX = true
+						precipGrid.CenterX = x
+					}
 				}
 				if strings.Contains(l, GridStormCenterYKeyword) {
-					foundY = true
-					precipGrid.CenterY = strings.TrimLeft(l, GridStormCenterYKeyword)
+					centerystring := strings.TrimLeft(l, GridStormCenterYKeyword)
+					y, err := strconv.ParseFloat(centerystring, 64)
+					if err != nil {
+						foundY = false
+					} else {
+						foundY = true
+						precipGrid.CenterY = y
+					}
 				}
 				precipGridLines = append(precipGridLines, l)
 			} else {
