@@ -34,6 +34,9 @@ func InitModel(transpositionRegion plugin.ResourceInfo) (Model, error) {
 	fileName := "transpositionregion.gpkg"
 	filePath := fmt.Sprintf("%v%v", localDir, fileName)
 	err = writeLocalBytes(bytes, localDir, filePath)
+	//h, err := gpkg.Open(filePath)
+	//ext, err := h.CalculateGeometryExtent("muncie_simple_transposition_region")
+	//fmt.Print(ext)
 	ds := gdal.OpenDataSource(filePath, 0) //defer disposing the datasource and layers.
 	layer := ds.LayerByIndex(0)
 	envelope, err := layer.Extent(true)

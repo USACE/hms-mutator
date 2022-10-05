@@ -9,8 +9,14 @@ require (
 )
 
 require (
+	github.com/gdey/errors v0.0.0-20190426172550-8ebd5bc891fb // indirect
+	github.com/mattn/go-sqlite3 v1.12.0 // indirect
+)
+
+require (
 	github.com/USACE/filestore v0.1.5-0.20220416172749-6484811f7b13 // indirect
 	github.com/aws/aws-sdk-go v1.31.0 // indirect
+	github.com/go-spatial/geom v0.0.0-20220918193402-3cd2f5a9a082
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect

@@ -16,6 +16,8 @@ var GridTypeKeyword string = "     Grid Type: "
 var PrecipitationKeyword string = "Precipitation"
 var DssPathNameKeyword string = "       DSS Pathname: "
 var DssFileNameKeyword string = "       DSS File Name: "
+var GridStormCenterXKeyword string = "     Storm Center X: "
+var GridStormCenterYKeyword string = "     Storm Center Y: "
 
 type PrecipGridEvent struct {
 	Name      string
@@ -47,6 +49,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 	var gridFound = false
 	var isPrecipGrid = false
 	for _, l := range lines {
+		l = strings.Replace(l, "\r", "", -1) //remove returns if they exist in the line.
 		if l == "" {
 			continue
 		}
