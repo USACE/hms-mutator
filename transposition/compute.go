@@ -24,7 +24,7 @@ func InitSimulation(gpkgRI plugin.ResourceInfo, metRI plugin.ResourceInfo, gridR
 	}
 	s.gridFile = gf
 	//initialize transposition region
-	t, err := InitModel(gpkgRI)
+	t, err := InitModel(gpkgRI, gpkgRI) //TODO fix this.
 	if err != nil {
 		return s, err
 	}

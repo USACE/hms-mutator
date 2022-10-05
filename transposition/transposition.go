@@ -17,7 +17,8 @@ type Model struct {
 	yDist statistics.UniformDistribution
 	xDist statistics.ContinuousDistribution
 	//uniform start time distribution
-	ds gdal.DataSource
+	transpositionRegionDS gdal.DataSource
+	watershedBoundaryDS   gdal.DataSource
 }
 type ModelResult struct {
 	X float64
@@ -25,39 +26,46 @@ type ModelResult struct {
 	//time offset?
 }
 
-func InitModel(transpositionRegion plugin.ResourceInfo) (Model, error) {
+func InitModel(transpositionRegion plugin.ResourceInfo, watershedBoundary plugin.ResourceInfo) (Model, error) {
+	wbytes, err := plugin.DownloadObject(watershedBoundary)
+	if err != nil {
+		return Model{}, err
+	}
+	localDir := "/app/data/"
+	wfileName := "watershedBoundary.gpkg"
+	wfilePath := fmt.Sprintf("%v%v", localDir, wfileName)
+	err = writeLocalBytes(wbytes, localDir, wfilePath)
+	//h, err := gpkg.Open(filePath)
+	//ext, err := h.CalculateGeometryExtent("muncie_simple_transposition_region")
+	//fmt.Print(ext)
+	wds := gdal.OpenDataSource(wfilePath, 0) //defer disposing the datasource and layers.
 	//ensure path is local
 	bytes, err := plugin.DownloadObject(transpositionRegion)
 	if err != nil {
 		return Model{}, err
 	}
-	localDir := "/app/data/"
 	fileName := "transpositionregion.gpkg"
 	filePath := fmt.Sprintf("%v%v", localDir, fileName)
 	err = writeLocalBytes(bytes, localDir, filePath)
-	//h, err := gpkg.Open(filePath)
-	//ext, err := h.CalculateGeometryExtent("muncie_simple_transposition_region")
-	//fmt.Print(ext)
 	ds := gdal.OpenDataSource(filePath, 0) //defer disposing the datasource and layers.
 	layer := ds.LayerByIndex(0)
 	envelope, err := layer.Extent(true)
 	MaxX := envelope.MaxX()
 	MinX := envelope.MinX()
-	//MidX := (MinX + MaxX) / 2.0
 	MinY := envelope.MinY()
 	MaxY := envelope.MaxY()
-	//fmt.Println(envelope)
 	x := statistics.UniformDistribution{Max: MaxX, Min: MinX}
 	y := statistics.UniformDistribution{Max: MaxY, Min: MinY}
 	return Model{
-		yDist: y,
-		xDist: x,
-		ds:    ds,
+		yDist:                 y,
+		xDist:                 x,
+		transpositionRegionDS: ds,
+		watershedBoundaryDS:   wds,
 	}, nil
 }
 func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
-	layer := t.ds.LayerByIndex(0)
+	layer := t.transpositionRegionDS.LayerByIndex(0)
 	f := layer.Feature(1)
 	if f.IsNull() {
 		fmt.Println("im null...")
@@ -74,9 +82,7 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 		yval := t.yDist.InvCDF(yrand.Float64())
 
 		//validate if in transposition polygon, iterate until it is
-		geom, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)", xval, yval), ref)
-		//fmt.Println(geom.ToWKT())
-		//fmt.Printf("%v,%v,%v\n", 1, xval, yval)
+		geom, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)\n", xval, yval), ref)
 		if err != nil {
 			return xval, yval, err
 		}
@@ -85,12 +91,17 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 			xOffset = xval - pge.CenterX
 			yOffset = yval - pge.CenterY
 			fmt.Printf("Offset(x,y): (%v,%v)", xOffset, yOffset)
-			shiftSuccessful := true //TODO switch to false and test.
-			//shift
+			shiftSuccessful := false     //TODO switch to false and test.
+			geom := f.Geometry().Clone() //shift
+			for i := 0; i < geom.PointCount(); i++ {
+				px, py, pz := geom.Point(i)
+				geom.SetPoint(i, px+xOffset, py+yOffset, pz) //does this work or does it insert?
+			}
+			//need watershed boundary.
+			shiftSuccessful = true
 			if shiftSuccessful {
 				return xval, yval, nil
 			}
-
 		}
 	}
 }

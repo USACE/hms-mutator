@@ -16,7 +16,7 @@ func TestInitTransposition(t *testing.T) {
 		Root:  "workspaces/hms-mutator/",
 		Path:  path,
 	}
-	tr, err := InitModel(ri)
+	tr, err := InitModel(ri, ri)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -30,7 +30,7 @@ func TestSampleLocations(t *testing.T) {
 		Root:  "workspaces/hms-mutator/",
 		Path:  path,
 	}
-	tr, err := InitModel(ri)
+	tr, err := InitModel(ri, ri)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
