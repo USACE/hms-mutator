@@ -110,7 +110,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 							Status:    plugin.COMPUTING,
 							Progress:  10,
 							Level:     plugin.INFO,
-							Message:   fmt.Sprintf("Found grid %v but found no x and y center not adding grid to grid list.\r\n", precipGrid.Name),
+							Message:   fmt.Sprintf("found grid %v but found no x and y center not adding grid to grid list\r\n", precipGrid.Name),
 							Sender:    "hms-mutator",
 							PayloadId: "unknown payload id",
 						})
@@ -133,7 +133,7 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 	}
 	gridFileInfo.Lines = gridLines
 	if len(grids) == 0 {
-		return GridFile{GridFileInfo: gridFileInfo, Events: grids}, errors.New("Found no grids with x and y centers specified, please specify storm centers for transposition.")
+		return GridFile{GridFileInfo: gridFileInfo, Events: grids}, errors.New("found no grids with x and y centers specified, please specify storm centers for transposition")
 	}
 	return GridFile{GridFileInfo: gridFileInfo, Events: grids}, nil
 }

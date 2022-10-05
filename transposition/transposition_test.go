@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/wat-go-sdk/plugin"
 )
 
@@ -34,10 +35,17 @@ func TestSampleLocations(t *testing.T) {
 		fmt.Println(err)
 		t.Fail()
 	}
+	ge := hms.PrecipGridEvent{
+		Name:      "test",
+		StartTime: "test",
+		CenterX:   "1",
+		CenterY:   "2",
+		Lines:     []string{},
+	}
 	fmt.Printf("id,x,y\n")
 	rng := rand.New(rand.NewSource(1234))
 	for i := 0; i < 100; i++ {
-		x, y, _ := tr.Transpose(rng.Int63())
+		x, y, _ := tr.Transpose(rng.Int63(), ge)
 		fmt.Printf("%v,%v,%v\n", i, x, y)
 	}
 }

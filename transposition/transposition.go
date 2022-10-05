@@ -7,6 +7,7 @@ import (
 
 	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
 	"github.com/dewberry/gdal"
+	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/wat-go-sdk/plugin"
 )
 
@@ -54,7 +55,7 @@ func InitModel(transpositionRegion plugin.ResourceInfo) (Model, error) {
 		ds:    ds,
 	}, nil
 }
-func (t Model) Transpose(seed int64) (float64, float64, error) {
+func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
 	layer := t.ds.LayerByIndex(0)
 	f := layer.Feature(1)

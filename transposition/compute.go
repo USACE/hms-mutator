@@ -54,7 +54,7 @@ func (s *Simulation) Compute(seeds plugin.SeedSet) (hms.Met, hms.PrecipGridEvent
 		return s.metModel, ge, err
 	}
 	//transpose
-	x, y, err := s.transpositionModel.Transpose(transpositionSeed)
+	x, y, err := s.transpositionModel.Transpose(transpositionSeed, ge)
 	if err != nil {
 		return s.metModel, ge, err
 	}
