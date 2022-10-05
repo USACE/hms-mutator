@@ -102,13 +102,20 @@ func TestSimulationCompute(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
+	} else {
+		//compute simulation for given seed set
+		m, ge, err := sim.Compute(ss)
+		if err != nil {
+			fmt.Println(err)
+			t.Fail()
+		}
+		fmt.Println(ge.Name)
+		bytes, err := m.WriteBytes()
+		if err != nil {
+			fmt.Println(err)
+			t.Fail()
+		}
+		fmt.Println(string(bytes))
 	}
-	//compute simulation for given seed set
-	m, _, err := sim.Compute(ss)
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
-	}
-	bytes, err := m.WriteBytes()
-	fmt.Println(string(bytes))
+
 }
