@@ -1,6 +1,7 @@
 package transposition
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -66,26 +67,28 @@ func InitModel(transpositionRegion plugin.ResourceInfo, watershedBoundary plugin
 func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
 	layer := t.transpositionRegionDS.LayerByIndex(0)
+	//defer layer.Definition().Destroy()
 	transpositionRegion := layer.Feature(1)
+	defer transpositionRegion.Destroy()
 	if transpositionRegion.IsNull() {
 		fmt.Println("im null...")
 	}
 
 	wlayer := t.watershedBoundaryDS.LayerByIndex(0)
-	fmt.Printf("watershed Layers %v\n", t.watershedBoundaryDS.LayerCount())
+	//fmt.Printf("watershed Layers %v\n", t.watershedBoundaryDS.LayerCount())
 	wf := wlayer.Feature(1)
-	fcount, ok := wlayer.FeatureCount(true)
-	if ok {
-		fmt.Printf("watershed layer(1) features %v\n", fcount)
+	defer wf.Destroy()
+	if wf.Geometry().Type() != 3 {
+		return 0, 0, errors.New("watershed boundary geometry not a simple polygon")
 	}
-
 	if wf.IsNull() {
 		fmt.Println("im null...")
 	}
 	ref := layer.SpatialReference()
+	//defer ref.Destroy()
 	xOffset := 0.0
 	yOffset := 0.0
-
+	//fmt.Printf("Original Center (%v,%v)\n", pge.CenterX, pge.CenterY)
 	for {
 		xrand := rand.New(rand.NewSource(r.Int63()))
 		yrand := rand.New(rand.NewSource(r.Int63()))
@@ -94,6 +97,7 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 
 		//validate if in transposition polygon, iterate until it is
 		newCenter, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)\n", xval, yval), ref)
+		//defer newCenter.Destroy()
 		if err != nil {
 			return xval, yval, err
 		}
@@ -101,9 +105,10 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 		if transpositionRegion.Geometry().Contains(newCenter) {
 			xOffset = xval - pge.CenterX
 			yOffset = yval - pge.CenterY
-			fmt.Printf("Offset(x,y): (%v,%v)\n", xOffset, yOffset)
+			//fmt.Printf("Offset(x,y): (%v,%v)\n", xOffset, yOffset)
 			shiftContained := false                           //TODO switch to false and test.
 			shiftedWatershedBoundary := wf.Geometry().Clone() //shift watershed boundary
+			//defer shiftedWatershedBoundary.Destroy()
 			//shiftedWatershedBoundary = shiftedWatershedBoundary.Geometry(0)
 			geometrycount := shiftedWatershedBoundary.GeometryCount()
 			//count := shiftedWatershedBoundary.PointCount()
@@ -111,19 +116,11 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 
 			for g := 0; g < geometrycount; g++ {
 				geometry := shiftedWatershedBoundary.Geometry(g)
-				fmt.Printf("Geometry Type %v\n", geometry.Type())
-				fmt.Printf("Geometry Area %v\n", geometry.Area())
-				parts := geometry.GeometryCount()
-				fmt.Printf("Geometry parts %v\n", parts)
-				geometryisring := geometry.IsRing()
-				fmt.Printf("geometry is ring %v\n", geometryisring)
+				defer geometry.Destroy()
 				geometryPointCount := geometry.PointCount()
-				fmt.Printf("geometry point count %v\n", geometryPointCount)
-				geometryForced := geometry.ForceToPolygon()
-				geometryPointCount = geometryForced.PointCount()
-				fmt.Printf("forced geometry point count %v\n", geometryPointCount)
+				//fmt.Printf("geometry point count %v\n", geometryPointCount)
 				for i := 0; i < geometryPointCount; i++ {
-					px, py, pz := geometryForced.Point(i)
+					px, py, pz := geometry.Point(i)
 					shiftedWatershedBoundary.Geometry(g).SetPoint(i, px-xOffset, py-yOffset, pz) //does this work or does it insert?
 				}
 			}
@@ -131,6 +128,8 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 			//check shifted watershed boundary is contained in transposition region
 			shiftContained = transpositionRegion.Geometry().Contains(shiftedWatershedBoundary)
 			if shiftContained {
+				//s, _ := shiftedWatershedBoundary.ToWKT()
+				//fmt.Println(s)
 				return xval, yval, nil
 			} else {
 				plugin.Log(plugin.Message{

@@ -1,0 +1,461 @@
+Grid Manager: IC Transpose
+     Version: 4.11
+     Filepath Separator: \
+End:
+
+Grid: AORC 2010-07-22 A001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:54
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:54
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2010\2010072200_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/22JUL2010:0000/22JUL2010:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 479208.4930222261
+     Storm Center Y: 2174065.043454925
+End:
+
+Grid: AORC 2010-07-22 N001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:54
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:54
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2010\2010072200_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/22JUL2010:0000/22JUL2010:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 479208.4930222261
+     Storm Center Y: 2174065.043454925
+End:
+
+Grid: AORC 2010-07-22 M001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:54
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:54
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2010\2010072200_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/22JUL2010:0000/22JUL2010:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 479208.4930222261
+     Storm Center Y: 2174065.043454925
+End:
+
+Grid: AORC 2010-08-09 A002
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:55
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:55
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2010\2010080900_A002_N002_M002.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/09AUG2010:0000/09AUG2010:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 200232.8088455286
+     Storm Center Y: 2105918.5421720943
+End:
+
+Grid: AORC 2010-08-09 N002
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:55
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:55
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2010\2010080900_A002_N002_M002.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/09AUG2010:0000/09AUG2010:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 200232.8088455286
+     Storm Center Y: 2105918.5421720943
+End:
+
+Grid: AORC 2010-08-09 M002
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:55
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:55
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2010\2010080900_A002_N002_M002.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/09AUG2010:0000/09AUG2010:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 200232.8088455286
+     Storm Center Y: 2105918.5421720943
+End:
+
+Grid: AORC 2011-07-26 A001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:53
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:53
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2011\2011072600_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/26JUL2011:0000/26JUL2011:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 454944.71767894266
+     Storm Center Y: 2168870.706466835
+End:
+
+Grid: AORC 2011-07-26 N001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:53
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:53
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2011\2011072600_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/26JUL2011:0000/26JUL2011:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 454944.71767894266
+     Storm Center Y: 2168870.706466835
+End:
+
+Grid: AORC 2011-07-26 M001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:53
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:53
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2011\2011072600_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/26JUL2011:0000/26JUL2011:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 454944.71767894266
+     Storm Center Y: 2168870.706466835
+End:
+
+Grid: AORC 2013-06-21 A001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:58
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:58
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2013\2013062100_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/21JUN2013:0000/21JUN2013:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 384753.43662704166
+     Storm Center Y: 2262029.8195020463
+End:
+
+Grid: AORC 2013-06-21 N001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:58
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:58
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2013\2013062100_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/21JUN2013:0000/21JUN2013:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 384753.43662704166
+     Storm Center Y: 2262029.8195020463
+End:
+
+Grid: AORC 2013-06-21 M001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:58
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:58
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2013\2013062100_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/21JUN2013:0000/21JUN2013:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 384753.43662704166
+     Storm Center Y: 2262029.8195020463
+End:
+
+Grid: AORC 2017-06-28 A001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 14:39:30
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 14:39:30
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2017\2017062800_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/28JUN2017:0000/28JUN2017:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 129088.49257658258
+     Storm Center Y: 1921538.4335765871
+End:
+
+Grid: AORC 2017-06-28 N001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 14:39:30
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 14:39:30
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2017\2017062800_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/28JUN2017:0000/28JUN2017:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 129088.49257658258
+     Storm Center Y: 1921538.4335765871
+End:
+
+Grid: AORC 2017-06-28 M001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 14:39:30
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 14:39:30
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2017\2017062800_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/28JUN2017:0000/28JUN2017:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 129088.49257658258
+     Storm Center Y: 1921538.4335765871
+End:
+
+Grid: AORC 2017-06-29 A000
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:52
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:52
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2017\2017062900_A000_N000_M000.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/01JUL2017:0000/01JUL2017:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 129088.49257658258
+     Storm Center Y: 1921538.4335765871
+End:
+
+Grid: AORC 2017-06-29 N000
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:52
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:52
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2017\2017062900_A000_N000_M000.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/01JUL2017:0000/01JUL2017:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 129088.49257658258
+     Storm Center Y: 1921538.4335765871
+End:
+
+Grid: AORC 2017-06-29 M000
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:52
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:52
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2017\2017062900_A000_N000_M000.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/01JUL2017:0000/01JUL2017:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 129088.49257658258
+     Storm Center Y: 1921538.4335765871
+End:
+
+Grid: AORC 2018-09-18 A005
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:43:53
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:43:53
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2018\2018091800_A005_N004_M005.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/18SEP2018:0000/18SEP2018:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 29578.886529322663
+     Storm Center Y: 2233826.24542342
+End:
+
+Grid: AORC 2018-09-18 N004
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:43:53
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:43:53
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2018\2018091800_A005_N004_M005.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/18SEP2018:0000/18SEP2018:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: -27047.704431928767
+     Storm Center Y: 2248707.287468873
+End:
+
+Grid: AORC 2018-09-18 M005
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:43:53
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:43:53
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2018\2018091800_A005_N004_M005.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/18SEP2018:0000/18SEP2018:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 29578.886529322663
+     Storm Center Y: 2233826.24542342
+End:
+
+Grid: AORC 2021-08-26 A001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:56
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:56
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2021\2021082600_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/26AUG2021:0000/26AUG2021:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 290749.3724854464
+     Storm Center Y: 2254165.028272978
+End:
+
+Grid: AORC 2021-08-26 N001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:56
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:56
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2021\2021082600_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/26AUG2021:0000/26AUG2021:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 290749.3724854464
+     Storm Center Y: 2254165.028272978
+End:
+
+Grid: AORC 2021-08-26 M001
+     Grid Type: Precipitation
+     Last Modified Date: 05 October 2022
+     Last Modified Time: 15:09:56
+     Reference Height Units: Meters
+     Reference Height: 10.0
+     Data Source Type: External DSS
+     Variant: Variant-1
+       Last Variant Modified Date: 05 October 2022
+       Last Variant Modified Time: 15:09:56
+       Default Variant: Yes
+       DSS File Name: C:\Data\AORC\Iowa\hr72\2021\2021082600_A001_N001_M001.dss
+       DSS Pathname: /SHG4K/IOWA/PRECIPITATION/26AUG2021:0000/26AUG2021:0100/AORC/
+     End Variant: Variant-1
+     Use Lookup Table: No
+     Storm Center X: 290749.3724854464
+     Storm Center Y: 2254165.028272978
+End:
+

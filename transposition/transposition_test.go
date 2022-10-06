@@ -30,7 +30,7 @@ func TestSampleLocations(t *testing.T) {
 		Root:  "workspaces/hms-mutator/",
 		Path:  path,
 	}
-	wpath := "../exampledata/watershedBoundary.gpkg"
+	wpath := "../exampledata/watershedBoundary_2.gpkg"
 	wri := plugin.ResourceInfo{
 		Store: plugin.LOCAL,
 		Root:  "workspaces/hms-mutator/",
@@ -41,16 +41,17 @@ func TestSampleLocations(t *testing.T) {
 		fmt.Println(err)
 		t.Fail()
 	}
-	ge := hms.PrecipGridEvent{
-		Name:      "test",
-		StartTime: "test",
-		CenterX:   1.0,
-		CenterY:   2.0,
-		Lines:     []string{},
+	gpath := "../exampledata/IC_Transpose-v2.grid"
+	gri := plugin.ResourceInfo{
+		Store: plugin.LOCAL,
+		Root:  "workspaces/hms-mutator/",
+		Path:  gpath,
 	}
+	gf, _ := hms.ReadGrid(gri)
 	fmt.Printf("id,name,x,y\n")
 	rng := rand.New(rand.NewSource(1234))
 	for i := 0; i < 1; i++ {
+		ge, _ := gf.SelectEvent(rng.Int63())
 		x, y, _ := tr.Transpose(rng.Int63(), ge)
 		fmt.Printf("%v,%v,%v,%v\n", i, ge.Name, x, y)
 	}

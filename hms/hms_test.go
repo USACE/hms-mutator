@@ -84,14 +84,14 @@ func TestControlOffset(t *testing.T) {
 	}
 }
 func TestReadGrid(t *testing.T) {
-	path := "../exampledata/IC_Transpose_eric.grid"
+	path := "../exampledata/IC_Transpose-v2.grid"
 	ri := plugin.ResourceInfo{
 		Store: plugin.LOCAL,
 		Root:  "workspaces/hms-mutator/",
 		Path:  path,
 	}
 	g, _ := ReadGrid(ri)
-	if len(g.Events) != 2 {
+	if len(g.Events) != 24 {
 		t.Fail()
 	}
 }
@@ -111,7 +111,7 @@ func TestSelectGrid(t *testing.T) {
 }
 
 func TestReadSelectUpdateWriteGrid(t *testing.T) {
-	path := "../exampledata/WhiteRiver_Muncie.grid"
+	path := "../exampledata/IC_Transpose-v2.grid"
 	ri := plugin.ResourceInfo{
 		Store: plugin.LOCAL,
 		Root:  "workspaces/hms-mutator/",
@@ -119,6 +119,25 @@ func TestReadSelectUpdateWriteGrid(t *testing.T) {
 	}
 	g, _ := ReadGrid(ri)
 	rnd := rand.New(rand.NewSource(1234))
+	e, _ := g.SelectEvent(rnd.Int63())
+	_ = e.UpdateDSSFile("data/storms.dss")
+	s := string(g.toBytes(e))
+	fmt.Println(s)
+}
+
+func TestReadBootstrapSelectUpdateWriteGrid(t *testing.T) {
+	path := "../exampledata/IC_Transpose-v2.grid"
+	ri := plugin.ResourceInfo{
+		Store: plugin.LOCAL,
+		Root:  "workspaces/hms-mutator/",
+		Path:  path,
+	}
+	g, _ := ReadGrid(ri)
+	rnd := rand.New(rand.NewSource(1234))
+	g.Bootstrap(rnd.Int63())
+	for _, pge := range g.Events {
+		fmt.Printf("Event Name: %v \n", pge.Name)
+	}
 	e, _ := g.SelectEvent(rnd.Int63())
 	_ = e.UpdateDSSFile("data/storms.dss")
 	s := string(g.toBytes(e))
