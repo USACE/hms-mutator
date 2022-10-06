@@ -109,7 +109,7 @@ func TestSimulationCompute(t *testing.T) {
 			fmt.Println(err)
 			t.Fail()
 		}
-		fmt.Println(ge.Name)
+		fmt.Printf("%v\n", ge.Name)
 		bytes, err := m.WriteBytes()
 		if err != nil {
 			fmt.Println(err)

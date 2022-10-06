@@ -95,7 +95,7 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 		if transpositionRegion.Geometry().Contains(newCenter) {
 			xOffset = xval - pge.CenterX
 			yOffset = yval - pge.CenterY
-			fmt.Printf("Offset(x,y): (%v,%v)", xOffset, yOffset)
+			fmt.Printf("Offset(x,y): (%v,%v)\n", xOffset, yOffset)
 			shiftContained := false                           //TODO switch to false and test.
 			shiftedWatershedBoundary := wf.Geometry().Clone() //shift watershed boundary
 			for i := 0; i < shiftedWatershedBoundary.PointCount(); i++ {

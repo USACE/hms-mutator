@@ -18,6 +18,8 @@ Grid: AORC
        DSS Pathname: ///PRECIPITATION/18DEC2013:0600/18DEC2013:0700//
      End Variant: Variant-1
      Use Lookup Table: No
+     Storm Center X: 476918.49
+     Storm Center Y: 1777559.043454925
 End:
 
 Grid: MRMS
@@ -35,5 +37,7 @@ Grid: MRMS
        DSS Pathname: ///PRECIPITATION/26MAR2018:1300/26MAR2018:1400//
      End Variant: Variant-1
      Use Lookup Table: No
+     Storm Center X: 476918.49
+     Storm Center Y: 1777559.043454925
 End:
 

@@ -111,7 +111,7 @@ func TestSelectGrid(t *testing.T) {
 }
 
 func TestReadSelectUpdateWriteGrid(t *testing.T) {
-	path := "../exampledata/KanawhaHMS.grid"
+	path := "../exampledata/WhiteRiver_Muncie.grid"
 	ri := plugin.ResourceInfo{
 		Store: plugin.LOCAL,
 		Root:  "workspaces/hms-mutator/",
