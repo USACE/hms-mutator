@@ -72,7 +72,13 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 	}
 
 	wlayer := t.watershedBoundaryDS.LayerByIndex(0)
+	fmt.Printf("watershed Layers %v\n", t.watershedBoundaryDS.LayerCount())
 	wf := wlayer.Feature(1)
+	fcount, ok := wlayer.FeatureCount(true)
+	if ok {
+		fmt.Printf("watershed layer(1) features %v\n", fcount)
+	}
+
 	if wf.IsNull() {
 		fmt.Println("im null...")
 	}
@@ -98,10 +104,30 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 			fmt.Printf("Offset(x,y): (%v,%v)\n", xOffset, yOffset)
 			shiftContained := false                           //TODO switch to false and test.
 			shiftedWatershedBoundary := wf.Geometry().Clone() //shift watershed boundary
-			for i := 0; i < shiftedWatershedBoundary.PointCount(); i++ {
-				px, py, pz := shiftedWatershedBoundary.Point(i)
-				shiftedWatershedBoundary.SetPoint(i, px-xOffset, py-yOffset, pz) //does this work or does it insert?
+			//shiftedWatershedBoundary = shiftedWatershedBoundary.Geometry(0)
+			geometrycount := shiftedWatershedBoundary.GeometryCount()
+			//count := shiftedWatershedBoundary.PointCount()
+			//origCount := wf.Geometry().Geometry(0).PointCount()
+
+			for g := 0; g < geometrycount; g++ {
+				geometry := shiftedWatershedBoundary.Geometry(g)
+				fmt.Printf("Geometry Type %v\n", geometry.Type())
+				fmt.Printf("Geometry Area %v\n", geometry.Area())
+				parts := geometry.GeometryCount()
+				fmt.Printf("Geometry parts %v\n", parts)
+				geometryisring := geometry.IsRing()
+				fmt.Printf("geometry is ring %v\n", geometryisring)
+				geometryPointCount := geometry.PointCount()
+				fmt.Printf("geometry point count %v\n", geometryPointCount)
+				geometryForced := geometry.ForceToPolygon()
+				geometryPointCount = geometryForced.PointCount()
+				fmt.Printf("forced geometry point count %v\n", geometryPointCount)
+				for i := 0; i < geometryPointCount; i++ {
+					px, py, pz := geometryForced.Point(i)
+					shiftedWatershedBoundary.Geometry(g).SetPoint(i, px-xOffset, py-yOffset, pz) //does this work or does it insert?
+				}
 			}
+
 			//check shifted watershed boundary is contained in transposition region
 			shiftContained = transpositionRegion.Geometry().Contains(shiftedWatershedBoundary)
 			if shiftContained {

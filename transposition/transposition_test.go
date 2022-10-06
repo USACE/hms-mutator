@@ -30,7 +30,13 @@ func TestSampleLocations(t *testing.T) {
 		Root:  "workspaces/hms-mutator/",
 		Path:  path,
 	}
-	tr, err := InitModel(ri, ri)
+	wpath := "../exampledata/watershedBoundary.gpkg"
+	wri := plugin.ResourceInfo{
+		Store: plugin.LOCAL,
+		Root:  "workspaces/hms-mutator/",
+		Path:  wpath,
+	}
+	tr, err := InitModel(ri, wri)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -42,11 +48,11 @@ func TestSampleLocations(t *testing.T) {
 		CenterY:   2.0,
 		Lines:     []string{},
 	}
-	fmt.Printf("id,x,y\n")
+	fmt.Printf("id,name,x,y\n")
 	rng := rand.New(rand.NewSource(1234))
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1; i++ {
 		x, y, _ := tr.Transpose(rng.Int63(), ge)
-		fmt.Printf("%v,%v,%v\n", i, x, y)
+		fmt.Printf("%v,%v,%v,%v\n", i, ge.Name, x, y)
 	}
 }
 func TestSimulationCompute(t *testing.T) {
