@@ -48,6 +48,10 @@ func (s *Simulation) Compute(seeds plugin.SeedSet) (hms.Met, hms.PrecipGridEvent
 	nvrng := rand.New(rand.NewSource(seeds.EventSeed))
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
+	kurng := rand.New(rand.NewSource(seeds.RealizationSeed))
+	bootstrapSeed := kurng.Int63()
+	//bootstrap events
+	s.gridFile.Bootstrap(bootstrapSeed)
 	//select event
 	ge, err := s.gridFile.SelectEvent(stormSeed)
 	if err != nil {
