@@ -150,11 +150,21 @@ func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
 	}
 	return GridFile{GridFileInfo: gridFileInfo, Events: grids}, nil
 }
-
-func (gf GridFile) SelectEvent(seed int64) (PrecipGridEvent, error) {
+func (gf *GridFile) Bootstrap(knowledgeUncertaintySeed int64) error {
+	length := len(gf.Events)
+	r := rand.New(rand.NewSource(knowledgeUncertaintySeed))
+	updatedList := make([]PrecipGridEvent, length)
+	for i := 0; i < length; i++ {
+		idx := r.Int31n(int32(length))
+		updatedList[i] = gf.Events[idx] //sample with replacement.
+	}
+	gf.Events = updatedList //replace dataset with bootstrap.
+	return nil
+}
+func (gf GridFile) SelectEvent(naturalVariabilitySeed int64) (PrecipGridEvent, error) {
 	//randomly select one event from the list of events
 	length := len(gf.Events)
-	r := rand.New(rand.NewSource(seed))
+	r := rand.New(rand.NewSource(naturalVariabilitySeed))
 	idx := r.Int31n(int32(length))
 	return gf.Events[idx], nil
 }
