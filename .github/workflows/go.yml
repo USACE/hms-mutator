@@ -9,10 +9,17 @@ on:
 jobs:
 
   build:
-    runs-on: osgeo/gdal:alpine-normal-3.5.2
+    runs-on: debian:bullseye
     steps:
-    - name: apk install dependencies
-      run: apk add --no-cache pkgconfig gcc libc-dev
+    - name: apt update
+      run: apt update
+    - name: build essential
+      run: apt -y install build-essential
+    - name: install gdal
+      run: apt -y install gdal-bin gdal-data libgdal-dev
+
+    - name: checkout code
+      uses: actions/checkout@v3
       
     - name: checkout code
       uses: actions/checkout@v3
