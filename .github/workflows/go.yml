@@ -9,8 +9,16 @@ on:
 jobs:
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: debian:bullseye
     steps:
+    - name: apt update
+      run: apt update
+    - name: build essential
+      run: apt -y install build-essential
+    - name: install gdal
+      run: apt -y install gdal-bin gdal-data libgdal-dev
+      
+    - name: checkout code
     - uses: actions/checkout@v3
 
     - name: Set up Go
