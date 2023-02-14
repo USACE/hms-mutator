@@ -19,7 +19,7 @@ type Mca struct {
 	Lines            []string
 }
 
-func ReadMca(mcaResource plugin.ResourceInfo) (Mca, error) {
+func ReadMca(mcaResource []byte) (Mca, error) {
 	//read bytes
 	//loop through and find met and precip blocks
 	bytes, err := plugin.DownloadObject(mcaResource)

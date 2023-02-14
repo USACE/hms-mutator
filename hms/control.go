@@ -18,7 +18,7 @@ type Control struct {
 	StartTime string
 }
 
-func ReadControl(controlRI plugin.ResourceInfo) (Control, error) {
+func ReadControl(controlRI []byte) (Control, error) {
 	//read bytes
 	//loop through and find startdate and start time
 	bytes, err := plugin.DownloadObject(controlRI)

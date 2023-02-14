@@ -35,7 +35,7 @@ type GridFile struct {
 	Events []PrecipGridEvent
 }
 
-func ReadGrid(gridResource plugin.ResourceInfo) (GridFile, error) {
+func ReadGrid(gridResource []byte) (GridFile, error) {
 	//read bytes
 	//loop through and find grids
 	bytes, err := plugin.DownloadObject(gridResource)

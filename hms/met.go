@@ -3,8 +3,6 @@ package hms
 import (
 	"fmt"
 	"strings"
-
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 var PrecipStartKeyword string = "Precip Method Parameters:"
@@ -23,14 +21,9 @@ type PrecipMethodParameters struct {
 	lines []string
 }
 
-func ReadMet(metResource plugin.ResourceInfo) (Met, error) {
-	//read bytes
-	//loop through and find met and precip blocks
-	bytes, err := plugin.DownloadObject(metResource)
-	if err != nil {
-		return Met{}, err
-	}
-	metfilestring := string(bytes)
+func ReadMet(metResource []byte) (Met, error) {
+
+	metfilestring := string(metResource)
 	lines := strings.Split(metfilestring, "\r\n") //maybe rn?
 	foundPrecipMethod := false
 	foundPrecipEnd := false
