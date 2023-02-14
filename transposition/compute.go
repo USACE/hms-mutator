@@ -5,7 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/usace/hms-mutator/hms"
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 type Simulation struct {
@@ -44,11 +43,11 @@ func InitSimulation(trgpkgRI []byte, wbgpkgRI []byte, metRI []byte, gridRI []byt
 	return s, nil
 
 }
-func (s *Simulation) Compute(seeds plugin.SeedSet) (hms.Met, hms.PrecipGridEvent, error) {
-	nvrng := rand.New(rand.NewSource(seeds.EventSeed))
+func (s *Simulation) Compute(eventSeed int64, realizationSeed int64) (hms.Met, hms.PrecipGridEvent, error) {
+	nvrng := rand.New(rand.NewSource(eventSeed))
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
-	kurng := rand.New(rand.NewSource(seeds.RealizationSeed))
+	kurng := rand.New(rand.NewSource(realizationSeed))
 	bootstrapSeed := kurng.Int63()
 	//bootstrap events
 	s.gridFile.Bootstrap(bootstrapSeed)
@@ -81,6 +80,6 @@ func (s *Simulation) Compute(seeds plugin.SeedSet) (hms.Met, hms.PrecipGridEvent
 	}
 	return s.metModel, ge, nil
 }
-func (s Simulation) UploadGridFile(gori plugin.ResourceInfo, pge hms.PrecipGridEvent) error {
-	return s.gridFile.Write(gori, pge)
+func (s Simulation) GetGridFileBytes(precipevent hms.PrecipGridEvent) []byte {
+	return s.gridFile.ToBytes(precipevent)
 }

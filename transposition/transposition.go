@@ -27,28 +27,26 @@ type ModelResult struct {
 	//time offset?
 }
 
-func InitModel(transpositionRegion cc.DataSource, watershedBoundary cc.DataSource) (Model, error) {
-	pm, err := cc.InitPluginManager()
-	wbytes, err := pm.GetFile(watershedBoundary, 0)
-	if err != nil {
-		return Model{}, err
-	}
+func InitModel(transpositionRegion []byte, watershedBoundary []byte) (Model, error) {
+	model := Model{}
 	localDir := "/app/data/"
 	wfileName := "watershedBoundary.gpkg"
 	wfilePath := fmt.Sprintf("%v%v", localDir, wfileName)
-	err = writeLocalBytes(wbytes, localDir, wfilePath)
+	err := writeLocalBytes(watershedBoundary, localDir, wfilePath)
+	if err != nil {
+		return model, err
+	}
 	//h, err := gpkg.Open(filePath)
 	//ext, err := h.CalculateGeometryExtent("muncie_simple_transposition_region")
 	//fmt.Print(ext)
 	wds := gdal.OpenDataSource(wfilePath, 0) //defer disposing the datasource and layers.
 	//ensure path is local
-	bytes, err := pm.GetFile(transpositionRegion, 0)
-	if err != nil {
-		return Model{}, err
-	}
 	fileName := "transpositionregion.gpkg"
 	filePath := fmt.Sprintf("%v%v", localDir, fileName)
-	err = writeLocalBytes(bytes, localDir, filePath)
+	err = writeLocalBytes(transpositionRegion, localDir, filePath)
+	if err != nil {
+		return model, err
+	}
 	ds := gdal.OpenDataSource(filePath, 0) //defer disposing the datasource and layers.
 	layer := ds.LayerByIndex(0)
 	envelope, err := layer.Extent(true)

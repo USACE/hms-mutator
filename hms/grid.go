@@ -38,11 +38,7 @@ type GridFile struct {
 func ReadGrid(gridResource []byte) (GridFile, error) {
 	//read bytes
 	//loop through and find grids
-	bytes, err := plugin.DownloadObject(gridResource)
-	if err != nil {
-		return GridFile{}, err
-	}
-	gridstring := string(bytes)
+	gridstring := string(gridResource)
 	lines := strings.Split(gridstring, "\n") //maybe rn?
 	grids := make([]PrecipGridEvent, 0)
 	var precipGrid PrecipGridEvent
@@ -191,7 +187,7 @@ func (pge *PrecipGridEvent) UpdateDSSFile(path string) error {
 	}
 	return nil
 }
-func (gf GridFile) toBytes(precipEvent PrecipGridEvent) []byte {
+func (gf GridFile) ToBytes(precipEvent PrecipGridEvent) []byte {
 	b := make([]byte, 0)
 	for _, l := range gf.GridFileInfo.Lines {
 		b = append(b, l...)
@@ -206,8 +202,4 @@ func (gf GridFile) toBytes(precipEvent PrecipGridEvent) []byte {
 		b = append(b, "\r\n"...)
 	}
 	return b
-}
-func (gf GridFile) Write(outputResourceInfo plugin.ResourceInfo, precipEvent PrecipGridEvent) error {
-	b := gf.toBytes(precipEvent)
-	return plugin.UpLoadFile(outputResourceInfo, b)
 }

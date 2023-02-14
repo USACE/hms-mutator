@@ -56,7 +56,7 @@ func computePayload(pm *cc.PluginManager) error {
 		})
 		return err
 	}
-	pm.GetFile()
+
 	var mcaRI cc.DataSource
 	var eventConfigRI cc.DataSource
 	var gridRI cc.DataSource
@@ -185,23 +185,80 @@ func computePayload(pm *cc.PluginManager) error {
 		return err
 	}
 	//initialize simulation
-	sim, err := transposition.InitSimulation(trgpkgRI, wbgpkgRI, metRI, gridRI, controlRI)
+	trbytes, err := pm.GetFile(trgpkgRI, 0)
 	if err != nil {
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      fmt.Errorf("could not get bytes for transposition region").Error(),
+		})
+		return err
+	}
+	wbgpkgbytes, err := pm.GetFile(wbgpkgRI, 0)
+	if err != nil {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      fmt.Errorf("could not get bytes for watershed boundary").Error(),
+		})
+		return err
+	}
+	metbytes, err := pm.GetFile(metRI, 0)
+	if err != nil {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      fmt.Errorf("couldnot get bytes for met file").Error(),
+		})
+		return err
+	}
+	gridbytes, err := pm.GetFile(gridRI, 0)
+	if err != nil {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      fmt.Errorf("couldnot get bytes for grid file").Error(),
+		})
+		return err
+	}
+	controlbytes, err := pm.GetFile(controlRI, 0)
+	if err != nil {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      fmt.Errorf("couldnot get bytes for control file").Error(),
+		})
+		return err
+	}
+	sim, err := transposition.InitSimulation(trbytes, wbgpkgbytes, metbytes, gridbytes, controlbytes)
+	if err != nil {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	//compute simulation for given seed set
-	m, ge, err := sim.Compute(ss)
+	m, ge, err := sim.Compute(seedSet.EventSeed, seedSet.RealizationSeed)
 	if err != nil {
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	//update mca file if present
 	mca := hms.Mca{}
 	if foundMca {
-		mca, err := hms.ReadMca(mcaRI)
+		mcabytes, err := pm.GetFile(mcaRI, 0)
 		if err != nil {
-			logError(err, payload)
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
+			return err
+		}
+		mca, err := hms.ReadMca(mcabytes)
+		if err != nil {
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
 			return err
 		}
 		mca.UpdateSeed(seedSet.EventSeed)
@@ -209,54 +266,72 @@ func computePayload(pm *cc.PluginManager) error {
 	//get met file bytes
 	mbytes, err := m.WriteBytes()
 	if err != nil {
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	//find the right resource locations
-	var mori plugin.ResourceInfo  //met file output
-	var mcori plugin.ResourceInfo //met file output
-	var dori plugin.ResourceInfo  //dss file output
-	var gori plugin.ResourceInfo  //grid file output
+	var mori cc.DataSource  //met file output
+	var mcori cc.DataSource //met file output
+	var dori cc.DataSource  //dss file output
+	var gori cc.DataSource  //grid file output
 	foundMori := false
 	foundMcori := false
 	foundDori := false
 	foundGori := false
 	for _, rfd := range payload.Outputs {
-		if strings.Contains(rfd.FileName, ".grid") {
-			gori = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, ".grid") {
+			gori = rfd
 			foundGori = true
 		}
-		if strings.Contains(rfd.FileName, ".met") {
-			mori = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, ".met") {
+			mori = rfd
 			foundMori = true
 		}
-		if strings.Contains(rfd.FileName, ".dss") {
-			dori = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, ".dss") {
+			dori = rfd
 			foundDori = true
 		}
 		if foundMca {
-			if strings.Contains(rfd.FileName, ".mca") {
-				mcori = rfd.ResourceInfo
+			if strings.Contains(rfd.Name, ".mca") {
+				mcori = rfd
 				foundMcori = true
 			}
 		}
 	}
 	//upload updated met files.
 	if foundMori {
-		err = plugin.UpLoadFile(mori, mbytes)
+		err = pm.PutFile(mbytes, mori, 0)
 		if err != nil {
-			logError(err, payload)
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
 			return err
 		}
 	} else {
 		err := fmt.Errorf("could not find output met file destination")
-		logError(err, payload)
+		if err != nil {
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
+			return err
+		}
 		return err
 	}
 	//if foundMca is true, then foundMcori might be true... upload updated mca file if foundMcori is true.
 	if foundMcori { //optional
 		err = mca.UploadToS3(mcori)
-		logError(err, payload)
+		if err != nil {
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
+			return err
+		}
 		return err
 	}
 
@@ -264,7 +339,10 @@ func computePayload(pm *cc.PluginManager) error {
 	if foundDori {
 		dssFileName, err := ge.OriginalDSSFile()
 		if err != nil {
-			logError(err, payload)
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
 			return err
 		}
 		//leverage the hms project directory structure
@@ -281,37 +359,45 @@ func computePayload(pm *cc.PluginManager) error {
 		}
 		err = ge.DownloadAndUploadDSSFile(projectRI, dori)
 		if err != nil {
-			logError(err, payload)
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
 			return err
 		}
 		//update the dss file output to match the ouptut destination
 		ge.UpdateDSSFile(dori.Path)
 	} else {
 		err := fmt.Errorf("could not find output storms.dss file destination")
-		logError(err, payload)
-		return err
+		if err != nil {
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
+			return err
+		}
 	}
 
 	//upload updated grid files.
 	if foundGori {
-		err = sim.UploadGridFile(gori, ge)
+		gfbytes := sim.GetGridFileBytes(ge)
+		pm.PutFile(gfbytes, gori, 0)
 		if err != nil {
-			logError(err, payload)
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
 			return err
 		}
 	} else {
 		err := fmt.Errorf("could not find output grid file destination")
-		logError(err, payload)
-		return err
+		if err != nil {
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
+			return err
+		}
 	}
-
-	plugin.Log(plugin.Message{
-		Status:    plugin.SUCCEEDED,
-		Progress:  100,
-		Level:     plugin.INFO,
-		Message:   "hms mutator complete",
-		Sender:    pluginName,
-		PayloadId: payload.Id,
-	})
 	return nil
 }

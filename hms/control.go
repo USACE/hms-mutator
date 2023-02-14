@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 var ControlKeyword string = "Control: "
@@ -21,11 +19,7 @@ type Control struct {
 func ReadControl(controlRI []byte) (Control, error) {
 	//read bytes
 	//loop through and find startdate and start time
-	bytes, err := plugin.DownloadObject(controlRI)
-	if err != nil {
-		return Control{}, err
-	}
-	controlstring := string(bytes)
+	controlstring := string(controlRI)
 	lines := strings.Split(controlstring, "\r\n") //maybe rn?
 	control := Control{}
 	for _, l := range lines {

@@ -22,11 +22,7 @@ type Mca struct {
 func ReadMca(mcaResource []byte) (Mca, error) {
 	//read bytes
 	//loop through and find met and precip blocks
-	bytes, err := plugin.DownloadObject(mcaResource)
-	if err != nil {
-		return Mca{}, err
-	}
-	mcafilestring := string(bytes)
+	mcafilestring := string(mcaResource)
 	lines := strings.Split(mcafilestring, "\r\n") //maybe rn?
 	seedFound := false
 	hasRealizations := false
