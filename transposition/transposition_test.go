@@ -1,22 +1,24 @@
 package transposition
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"testing"
 
+	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 func TestInitTransposition(t *testing.T) {
-	path := "../exampledata/muncie_simple_transpostion_region.gpkg"
-	ri := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  path,
+	path := "/workspaces/hms-mutator/exampledata/muncie_simple_transpostion_region.gpkg"
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fail()
 	}
-	tr, err := InitModel(ri, ri)
+	tr, err := InitModel(bytes, bytes)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -24,30 +26,27 @@ func TestInitTransposition(t *testing.T) {
 	fmt.Printf("X Dist: %v \nY Dist: %v", tr.xDist, tr.yDist)
 }
 func TestSampleLocations(t *testing.T) {
-	path := "../exampledata/muncie_simple_transpostion_region.gpkg"
-	ri := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  path,
+	path := "/workspaces/hms-mutator/exampledata/muncie_simple_transpostion_region.gpkg"
+	tbytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fail()
 	}
-	wpath := "../exampledata/watershedBoundary_2.gpkg"
-	wri := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  wpath,
+	wpath := "/workspaces/hms-mutator/exampledata/watershedBoundary_2.gpkg"
+	wbytes, err := ioutil.ReadFile(wpath)
+	if err != nil {
+		t.Fail()
 	}
-	tr, err := InitModel(ri, wri)
+	tr, err := InitModel(tbytes, wbytes)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
 	}
-	gpath := "../exampledata/IC_Transpose-v2.grid"
-	gri := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  gpath,
+	gpath := "/workspaces/hms-mutator/exampledata/IC_Transpose-v2.grid"
+	gbytes, err := ioutil.ReadFile(gpath)
+	if err != nil {
+		t.Fail()
 	}
-	gf, _ := hms.ReadGrid(gri)
+	gf, _ := hms.ReadGrid(gbytes)
 	fmt.Printf("id,name,x,y\n")
 	rng := rand.New(rand.NewSource(1234))
 	for i := 0; i < 1; i++ {
@@ -57,61 +56,57 @@ func TestSampleLocations(t *testing.T) {
 	}
 }
 func TestSimulationCompute(t *testing.T) {
-	path := "../exampledata/muncie_simple_transpostion_region.gpkg"
-	gpkgRI := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  path,
+	path := "/workspaces/hms-mutator/exampledata/muncie_simple_transpostion_region.gpkg"
+	tbytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fail()
 	}
-	wpath := "../exampledata/watershedBoundary.gpkg"
-	wgpkgRI := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  wpath,
+	wpath := "/workspaces/hms-mutator/exampledata/watershedBoundary_2.gpkg"
+	wbytes, err := ioutil.ReadFile(wpath)
+	if err != nil {
+		t.Fail()
 	}
-	mpath := "../exampledata/AORC.met"
-	metRI := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  mpath,
+	mpath := "/workspaces/hms-mutator/exampledata/AORC.met"
+	mbytes, err := ioutil.ReadFile(mpath)
+	if err != nil {
+		t.Fail()
 	}
-	cpath := "../exampledata/Dec_2013.control"
-	controlRI := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  cpath,
+	cpath := "/workspaces/hms-mutator/exampledata/Dec_2013.control"
+	cbytes, err := ioutil.ReadFile(cpath)
+	if err != nil {
+		t.Fail()
 	}
-	gpath := "../exampledata/WhiteRiver_Muncie.grid"
-	gridRI := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  gpath,
+	gpath := "/workspaces/hms-mutator/exampledata/WhiteRiver_Muncie.grid"
+	gbytes, err := ioutil.ReadFile(gpath)
+	if err != nil {
+		t.Fail()
 	}
-	epath := "../exampledata/eventconfiguration.json"
-	eventRI := plugin.ResourceInfo{
-		Store: plugin.LOCAL,
-		Root:  "workspaces/hms-mutator/",
-		Path:  epath,
+	epath := "/workspaces/hms-mutator/exampledata/eventconfiguration.json"
+	ec := plugin.EventConfiguration{}
+	ebytes, err := ioutil.ReadFile(epath)
+	if err != nil {
+		t.Fail()
 	}
-	ec, err := plugin.LoadEventConfiguration(eventRI)
+	ereader := bytes.NewReader(ebytes)
+	err = json.NewDecoder(ereader).Decode(&ec)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
 	}
 	//obtain seed set
-	ss, err := ec.SeedSet("hms-mutator-muncie-alt")
-	if err != nil {
+	ss, ok := ec.Seeds["hms-mutator-muncie-alt"]
+	if !ok {
 		fmt.Println(err)
 		t.Fail()
 	}
 	//initialize simulation
-	sim, err := InitSimulation(gpkgRI, wgpkgRI, metRI, gridRI, controlRI)
+	sim, err := InitSimulation(tbytes, wbytes, mbytes, gbytes, cbytes)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
 	} else {
 		//compute simulation for given seed set
-		m, ge, err := sim.Compute(ss)
+		m, ge, err := sim.Compute(ss.EventSeed, ss.RealizationSeed)
 		if err != nil {
 			fmt.Println(err)
 			t.Fail()
@@ -126,3 +121,24 @@ func TestSimulationCompute(t *testing.T) {
 	}
 
 }
+
+/*
+func Test_EventConfiguration(t *testing.T) {
+	epath := "/workspaces/hms-mutator/exampledata/eventconfiguration2.json"
+	seedset := make(map[string]plugin.SeedSet, 1)
+	seeds := plugin.SeedSet{
+		EventSeed:       5920220759044230130,
+		RealizationSeed: 3501447260771739518,
+	}
+	seedset["hms-mutator-muncie-alt"] = seeds
+	ec := plugin.EventConfiguration{
+		RealizationNumber: 1,
+		Seeds:             seedset,
+	}
+	bytes, err := json.Marshal(ec)
+	os.Remove(epath)
+	ioutil.WriteFile(epath, bytes, fs.ModeAppend)
+	if err != nil {
+		t.Fail()
+	}
+}*/

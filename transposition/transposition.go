@@ -8,7 +8,7 @@ import (
 
 	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
 	"github.com/dewberry/gdal"
-	"github.com/usace/cc-go-sdk"
+
 	"github.com/usace/hms-mutator/hms"
 )
 
@@ -64,7 +64,6 @@ func InitModel(transpositionRegion []byte, watershedBoundary []byte) (Model, err
 	}, nil
 }
 func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64, error) {
-	pm, _ := cc.InitPluginManager()
 	r := rand.New(rand.NewSource(seed))
 	layer := t.transpositionRegionDS.LayerByIndex(0)
 	//defer layer.Definition().Destroy()
@@ -132,9 +131,9 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 				//fmt.Println(s)
 				return xval, yval, nil
 			} else {
-				pm.LogMessage(cc.Message{
+				/*pm.LogMessage(cc.Message{
 					Message: fmt.Sprintf("storm center (%v,%v) rejected due to possible null data\n", xval, yval),
-				})
+				})*/
 			}
 		}
 	}

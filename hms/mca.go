@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 var SeedKeyword string = "     Seed Value: "
@@ -72,11 +70,11 @@ func (mf *Mca) UpdateSeed(seed int64) error {
 		return nil
 	}
 */
-func (mf Mca) UploadToS3(outputResourceInfo plugin.ResourceInfo) error {
+func (mf Mca) ToBytes() []byte {
 	b := make([]byte, 0)
 	for _, l := range mf.Lines {
 		b = append(b, l...)
 		b = append(b, "\r\n"...) //? are we sure i need to add those back in?
 	}
-	return plugin.UpLoadFile(outputResourceInfo, b)
+	return b
 }

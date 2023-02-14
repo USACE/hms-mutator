@@ -6,8 +6,6 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 var GridManagerKeyword string = "Grid Manager: "
@@ -115,14 +113,14 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 						precipGrid.Lines = precipGridLines
 						grids = append(grids, precipGrid)
 					} else {
-						plugin.Log(plugin.Message{
+						/*plugin.Log(plugin.Message{
 							Status:    plugin.COMPUTING,
 							Progress:  10,
 							Level:     plugin.INFO,
 							Message:   fmt.Sprintf("found grid %v but found no x and y center not adding grid to grid list\r\n", precipGrid.Name),
 							Sender:    "hms-mutator",
 							PayloadId: "unknown payload id",
-						})
+						})*/
 					}
 
 				}
@@ -164,12 +162,7 @@ func (gf GridFile) SelectEvent(naturalVariabilitySeed int64) (PrecipGridEvent, e
 	idx := r.Int31n(int32(length))
 	return gf.Events[idx], nil
 }
-func (pge PrecipGridEvent) DownloadAndUploadDSSFile(dssResourceInfo plugin.ResourceInfo, outputResourceInfo plugin.ResourceInfo) error {
-	bytes, _ := plugin.DownloadObject(dssResourceInfo)
-	//output destination should be "/data/Storm.dss"
-	plugin.UpLoadFile(outputResourceInfo, bytes)
-	return nil
-}
+
 func (pge *PrecipGridEvent) OriginalDSSFile() (string, error) {
 	for _, l := range pge.Lines {
 		if strings.Contains(l, DssFileNameKeyword) {

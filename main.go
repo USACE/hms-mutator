@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/usace/cc-go-sdk"
+	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/transposition"
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 var pluginName string = "hms-mutator"
@@ -176,8 +177,8 @@ func computePayload(pm *cc.PluginManager) error {
 	}
 
 	seedSetName := pluginName
-	seedSet, err := ec.SeedSet(seedSetName) //ec.Seeds[seedSetName]
-	if err != nil {
+	seedSet, ssok := ec.Seeds[seedSetName]
+	if !ssok {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,
 			Error:      fmt.Errorf("no seeds found by name of %v", seedSetName).Error(),
@@ -324,7 +325,8 @@ func computePayload(pm *cc.PluginManager) error {
 	}
 	//if foundMca is true, then foundMcori might be true... upload updated mca file if foundMcori is true.
 	if foundMcori { //optional
-		err = mca.UploadToS3(mcori)
+		bytes := mca.ToBytes()
+		err = pm.PutFile(bytes, mcori, 0)
 		if err != nil {
 			pm.LogError(cc.Error{
 				ErrorLevel: cc.ERROR,
@@ -346,18 +348,27 @@ func computePayload(pm *cc.PluginManager) error {
 			return err
 		}
 		//leverage the hms project directory structure
-		projectPathParts := strings.Split(metRI.Path, "\\")
+		projectPathParts := strings.Split(metRI.Paths[0], "\\")
 		dssPath := ""
 		for i := 0; i < len(projectPathParts)-1; i++ {
 			dssPath = fmt.Sprintf("%v\\%v", dssPath, projectPathParts[i])
 		}
 		dssPath = fmt.Sprintf("%v\\%v", dssPath, dssFileName)
-		projectRI := plugin.ResourceInfo{
-			Store: metRI.Store,
-			Root:  metRI.Root,
-			Path:  dssPath,
+		ds := cc.DataSource{
+			Name:      dssFileName,
+			ID:        &uuid.NameSpaceDNS,
+			Paths:     []string{dssPath},
+			StoreName: metRI.StoreName,
 		}
-		err = ge.DownloadAndUploadDSSFile(projectRI, dori)
+		dssBytes, err := pm.GetFile(ds, 0)
+		if err != nil {
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.ERROR,
+				Error:      err.Error(),
+			})
+			return err
+		}
+		err = pm.PutFile(dssBytes, dori, 0)
 		if err != nil {
 			pm.LogError(cc.Error{
 				ErrorLevel: cc.ERROR,
@@ -366,7 +377,7 @@ func computePayload(pm *cc.PluginManager) error {
 			return err
 		}
 		//update the dss file output to match the ouptut destination
-		ge.UpdateDSSFile(dori.Path)
+		ge.UpdateDSSFile(dori.Paths[0])
 	} else {
 		err := fmt.Errorf("could not find output storms.dss file destination")
 		if err != nil {
