@@ -1,11 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"strings"
 
+	"github.com/usace/cc-go-sdk"
 	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/transposition"
 	"github.com/usace/wat-go-sdk/plugin"
@@ -16,55 +17,53 @@ var pluginName string = "hms-mutator"
 func main() {
 
 	fmt.Println("hms-mutator!")
-	var payloadPath string
-	flag.StringVar(&payloadPath, "payload", "pathtopayload.yml", "please specify an input file using `-payload pathtopayload.yml`")
-	flag.Parse()
-	if payloadPath == "" {
-		plugin.Log(plugin.Message{
-			Status:    plugin.FAILED,
-			Progress:  0,
-			Level:     plugin.ERROR,
-			Message:   "given a blank path...\n\tplease specify an input file using `payload pathtopayload.yml`",
-			Sender:    pluginName,
-			PayloadId: "unknown payloadid because the plugin package could not be properly initalized",
+	pm, err := cc.InitPluginManager()
+	if err != nil {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      "could not initiate plugin manager",
 		})
 		return
 	}
-	err := plugin.InitConfigFromEnv()
+	err = computePayload(pm)
 	if err != nil {
-		logError(err, plugin.ModelPayload{Id: "unknownpayloadid"})
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      "could not compute payload",
+		})
 		return
-	}
-	payload, err := plugin.LoadPayload(payloadPath)
-	if err != nil {
-		logError(err, plugin.ModelPayload{Id: "unknownpayloadid"})
-		return
-	}
-	err = computePayload(payload)
-	if err != nil {
-		logError(err, payload)
-		return
+	} else {
+		pm.ReportProgress(cc.StatusReport{
+			Status:   "complete",
+			Progress: 100,
+		})
 	}
 }
-func computePayload(payload plugin.ModelPayload) error {
-
-	if len(payload.Outputs) < 3 {
-		err := errors.New(fmt.Sprint("expecting at least 3 outputs to be defined, found", len(payload.Outputs)))
-		logError(err, payload)
-		return err
+func computePayload(pm *cc.PluginManager) error {
+	payload := pm.GetPayload()
+	if len(pm.GetPayload().Outputs) < 3 {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      fmt.Sprint("expecting at least 3 outputs to be defined, found", len(payload.Outputs)),
+		})
+		return errors.New(fmt.Sprint("expecting at least 3 outputs to be defined, found", len(payload.Outputs)))
 	}
 	if len(payload.Inputs) < 6 {
 		err := errors.New(fmt.Sprint("expecting at least 6 inputs to be defined, found ", len(payload.Inputs)))
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      fmt.Sprint("expecting at least 6 inputs to be defined, found ", len(payload.Inputs)),
+		})
 		return err
 	}
-	var mcaRI plugin.ResourceInfo
-	var eventConfigRI plugin.ResourceInfo
-	var gridRI plugin.ResourceInfo
-	var metRI plugin.ResourceInfo
-	var trgpkgRI plugin.ResourceInfo
-	var wbgpkgRI plugin.ResourceInfo
-	var controlRI plugin.ResourceInfo
+	pm.GetFile()
+	var mcaRI cc.DataSource
+	var eventConfigRI cc.DataSource
+	var gridRI cc.DataSource
+	var metRI cc.DataSource
+	var trgpkgRI cc.DataSource
+	var wbgpkgRI cc.DataSource
+	var controlRI cc.DataSource
 	foundMca := false
 	foundEventConfig := false
 	foundGrid := false
@@ -73,86 +72,116 @@ func computePayload(payload plugin.ModelPayload) error {
 	foundWbGpkg := false
 	foundControl := false
 	for _, rfd := range payload.Inputs {
-		if strings.Contains(rfd.FileName, ".mca") {
-			mcaRI = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, ".mca") {
 			foundMca = true
+			mcaRI = rfd
 		}
-		if strings.Contains(rfd.FileName, "eventconfiguration.json") {
-			eventConfigRI = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, "eventconfiguration.json") {
 			foundEventConfig = true
+			eventConfigRI = rfd
 		}
-		if strings.Contains(rfd.FileName, ".grid") {
-			gridRI = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, ".grid") {
+			gridRI = rfd
 			foundGrid = true
 		}
-		if strings.Contains(rfd.FileName, ".met") {
-			metRI = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, ".met") {
+			metRI = rfd
 			foundMet = true
 		}
-		if strings.Contains(rfd.FileName, "TranspositionRegion.gpkg") {
-			trgpkgRI = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, "TranspositionRegion.gpkg") {
+			trgpkgRI = rfd
 			foundTrGpkg = true
 		}
-		if strings.Contains(rfd.FileName, "WatershedBoundary.gpkg") {
-			wbgpkgRI = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, "WatershedBoundary.gpkg") {
+			wbgpkgRI = rfd
 			foundWbGpkg = true
 		}
-		if strings.Contains(rfd.FileName, ".control") {
-			controlRI = rfd.ResourceInfo
+		if strings.Contains(rfd.Name, ".control") {
+			controlRI = rfd
 			foundControl = true
 		}
 	}
 	if !foundEventConfig {
 		err := fmt.Errorf("could not find event configuration to find the proper seeds to run sst")
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	if !foundMca {
 		msg := "no *.mca file detected, variability is only reflected in storm and storm positioning."
-		plugin.Log(plugin.Message{
-			Status:    plugin.COMPUTING,
-			Progress:  0,
-			Level:     plugin.INFO,
-			Message:   msg,
-			Sender:    pluginName,
-			PayloadId: payload.Id,
+		pm.LogMessage(cc.Message{
+			Message: msg,
 		})
 	}
 	if !foundGrid {
 		err := fmt.Errorf("could not find grid file for storm definitions")
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	if !foundMet {
 		err := fmt.Errorf("could not find met file for meterologic conditions")
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	if !foundTrGpkg {
 		err := fmt.Errorf("could not find gpkg file for transposition region TranspositionBoundary.gpkg")
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	if !foundWbGpkg {
 		err := fmt.Errorf("could not find gpkg file for watershed boundary WatershedBoundary.gpkg")
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	if !foundControl {
 		err := fmt.Errorf("could not find control file for timewindow specifications")
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      err.Error(),
+		})
 		return err
 	}
 	//read event configuration
-	ec, err := plugin.LoadEventConfiguration(eventConfigRI)
+	var ec plugin.EventConfiguration
+	eventConfigurationReader, err := pm.FileReader(eventConfigRI, 0)
 	if err != nil {
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      err.Error(),
+		})
 		return err
 	}
-	//obtain seed set
-	ss, err := ec.SeedSet(payload.Model.Alternative)
+	defer eventConfigurationReader.Close()
+	err = json.NewDecoder(eventConfigurationReader).Decode(&ec)
 	if err != nil {
-		logError(err, payload)
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      err.Error(),
+		})
+		return err
+	}
+
+	seedSetName := pluginName
+	seedSet, err := ec.SeedSet(seedSetName) //ec.Seeds[seedSetName]
+	if err != nil {
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      fmt.Errorf("no seeds found by name of %v", seedSetName).Error(),
+		})
 		return err
 	}
 	//initialize simulation
@@ -175,7 +204,7 @@ func computePayload(payload plugin.ModelPayload) error {
 			logError(err, payload)
 			return err
 		}
-		mca.UpdateSeed(ss.EventSeed)
+		mca.UpdateSeed(seedSet.EventSeed)
 	}
 	//get met file bytes
 	mbytes, err := m.WriteBytes()
@@ -285,14 +314,4 @@ func computePayload(payload plugin.ModelPayload) error {
 		PayloadId: payload.Id,
 	})
 	return nil
-}
-func logError(err error, payload plugin.ModelPayload) {
-	plugin.Log(plugin.Message{
-		Status:    plugin.FAILED,
-		Progress:  0,
-		Level:     plugin.ERROR,
-		Message:   err.Error(),
-		Sender:    pluginName,
-		PayloadId: payload.Id,
-	})
 }

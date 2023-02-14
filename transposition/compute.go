@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/usace/cc-go-sdk"
 	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/wat-go-sdk/plugin"
 )
@@ -15,7 +16,7 @@ type Simulation struct {
 	control            hms.Control
 }
 
-func InitSimulation(trgpkgRI plugin.ResourceInfo, wbgpkgRI plugin.ResourceInfo, metRI plugin.ResourceInfo, gridRI plugin.ResourceInfo, controlRI plugin.ResourceInfo) (Simulation, error) {
+func InitSimulation(trgpkgRI cc.DataSource, wbgpkgRI cc.DataSource, metRI cc.DataSource, gridRI cc.DataSource, controlRI cc.DataSource) (Simulation, error) {
 	s := Simulation{}
 	//read grid file
 	gf, err := hms.ReadGrid(gridRI)

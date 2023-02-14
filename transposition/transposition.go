@@ -8,8 +8,8 @@ import (
 
 	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
 	"github.com/dewberry/gdal"
+	"github.com/usace/cc-go-sdk"
 	"github.com/usace/hms-mutator/hms"
-	"github.com/usace/wat-go-sdk/plugin"
 )
 
 type Model struct {
@@ -27,8 +27,9 @@ type ModelResult struct {
 	//time offset?
 }
 
-func InitModel(transpositionRegion plugin.ResourceInfo, watershedBoundary plugin.ResourceInfo) (Model, error) {
-	wbytes, err := plugin.DownloadObject(watershedBoundary)
+func InitModel(transpositionRegion cc.DataSource, watershedBoundary cc.DataSource) (Model, error) {
+	pm, err := cc.InitPluginManager()
+	wbytes, err := pm.GetFile(watershedBoundary, 0)
 	if err != nil {
 		return Model{}, err
 	}
@@ -41,7 +42,7 @@ func InitModel(transpositionRegion plugin.ResourceInfo, watershedBoundary plugin
 	//fmt.Print(ext)
 	wds := gdal.OpenDataSource(wfilePath, 0) //defer disposing the datasource and layers.
 	//ensure path is local
-	bytes, err := plugin.DownloadObject(transpositionRegion)
+	bytes, err := pm.GetFile(transpositionRegion, 0)
 	if err != nil {
 		return Model{}, err
 	}
@@ -65,6 +66,7 @@ func InitModel(transpositionRegion plugin.ResourceInfo, watershedBoundary plugin
 	}, nil
 }
 func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64, error) {
+	pm, _ := cc.InitPluginManager()
 	r := rand.New(rand.NewSource(seed))
 	layer := t.transpositionRegionDS.LayerByIndex(0)
 	//defer layer.Definition().Destroy()
@@ -132,13 +134,8 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 				//fmt.Println(s)
 				return xval, yval, nil
 			} else {
-				plugin.Log(plugin.Message{
-					Status:    plugin.COMPUTING,
-					Progress:  50,
-					Level:     plugin.INFO,
-					Message:   fmt.Sprintf("storm center (%v,%v) rejected due to possible null data\n", xval, yval),
-					Sender:    "hms-mutator",
-					PayloadId: "unknown payload id",
+				pm.LogMessage(cc.Message{
+					Message: fmt.Sprintf("storm center (%v,%v) rejected due to possible null data\n", xval, yval),
 				})
 			}
 		}
@@ -148,14 +145,5 @@ func writeLocalBytes(b []byte, destinationRoot string, destinationPath string) e
 	if _, err := os.Stat(destinationRoot); os.IsNotExist(err) {
 		os.MkdirAll(destinationRoot, 0644) //do i need to trim filename?
 	}
-	err := os.WriteFile(destinationPath, b, 0644)
-	if err != nil {
-		plugin.Log(plugin.Message{
-			Message: fmt.Sprintf("failure to write local file: %v\n\terror:%v", destinationPath, err),
-			Level:   plugin.ERROR,
-			Sender:  "transposition",
-		})
-		return err
-	}
-	return nil
+	return os.WriteFile(destinationPath, b, 0644)
 }

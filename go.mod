@@ -11,15 +11,17 @@ require (
 require (
 	github.com/gdey/errors v0.0.0-20190426172550-8ebd5bc891fb // indirect
 	github.com/mattn/go-sqlite3 v1.12.0 // indirect
+	github.com/usace/filestore v0.0.0-20230130152432-edce4c2aa925 // indirect
 )
 
 require (
 	github.com/USACE/filestore v0.1.5-0.20220416172749-6484811f7b13 // indirect
-	github.com/aws/aws-sdk-go v1.31.0 // indirect
+	github.com/aws/aws-sdk-go v1.44.189 // indirect
 	github.com/go-spatial/geom v0.0.0-20220918193402-3cd2f5a9a082
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/jmespath/go-jmespath v0.3.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
+	github.com/usace/cc-go-sdk v0.0.0-20230210172949-b3a98bc3efaa
 	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3 // indirect
 	gonum.org/v1/gonum v0.9.3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
