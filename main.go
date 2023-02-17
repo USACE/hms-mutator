@@ -363,6 +363,10 @@ func computePayload(pm *cc.PluginManager) error {
 			return err
 		}
 		//leverage the hms project directory structure
+		//danger zone!!!! this is risky because the data could be missing
+		//this is to reduce the input data soruce specification for each event in the directory
+		//there could be hundreds of storms in the hms model and we dont want to copy them all
+		//just the one that is selected.
 		projectPathParts := strings.Split(metRI.Paths[0], "\\")
 		dssPath := ""
 		for i := 0; i < len(projectPathParts)-1; i++ {
