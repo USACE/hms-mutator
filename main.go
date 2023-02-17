@@ -298,20 +298,20 @@ func computePayload(pm *cc.PluginManager) error {
 	foundDori := false
 	foundGori := false
 	for _, rfd := range payload.Outputs {
-		if strings.Contains(rfd.Name, ".grid") {
+		if strings.Contains(rfd.Name, "Grid File") {
 			gori = rfd
 			foundGori = true
 		}
-		if strings.Contains(rfd.Name, ".met") {
+		if strings.Contains(rfd.Name, "Met File") {
 			mori = rfd
 			foundMori = true
 		}
-		if strings.Contains(rfd.Name, ".dss") {
+		if strings.Contains(rfd.Name, "Storm DSS File") {
 			dori = rfd
 			foundDori = true
 		}
 		if foundMca {
-			if strings.Contains(rfd.Name, ".mca") {
+			if strings.Contains(rfd.Name, "MCA File") {
 				mcori = rfd
 				foundMcori = true
 			}
@@ -395,8 +395,8 @@ func computePayload(pm *cc.PluginManager) error {
 			})
 			return err
 		}
-		//update the dss file output to match the ouptut destination
-		ge.UpdateDSSFile(dori.Paths[0])
+		//update the dss file output to match the agreed upon convention /data/Storm.dss
+		ge.UpdateDSSFile()
 	} else {
 		err := fmt.Errorf("could not find output storms.dss file destination")
 		if err != nil {
