@@ -59,12 +59,16 @@ func computePayload(pm *cc.PluginManager) error {
 	}
 
 	var mcaRI cc.DataSource
+	mcaIdx := 0
 	var eventConfigRI cc.DataSource
 	var gridRI cc.DataSource
+	gridIdx := 0
 	var metRI cc.DataSource
+	metIdx := 0
 	var trgpkgRI cc.DataSource
 	var wbgpkgRI cc.DataSource
 	var controlRI cc.DataSource
+	controlIdx := 0
 	foundMca := false
 	foundEventConfig := false
 	foundGrid := false
@@ -73,34 +77,45 @@ func computePayload(pm *cc.PluginManager) error {
 	foundWbGpkg := false
 	foundControl := false
 	for _, rfd := range payload.Inputs {
-		if strings.Contains(rfd.Name, ".mca") {
-			foundMca = true
-			mcaRI = rfd
+		if strings.Contains(rfd.Name, "HMS Model") {
+			for idx, path := range rfd.Paths {
+				if strings.Contains(path, ".grid") {
+					gridIdx = idx
+					gridRI = rfd
+					foundGrid = true
+				}
+				if strings.Contains(path, ".met") {
+					metIdx = idx
+					metRI = rfd
+					foundMet = true
+				}
+				if strings.Contains(path, ".control") {
+					controlIdx = idx
+					controlRI = rfd
+					foundControl = true
+				}
+				if strings.Contains(path, ".mca") {
+					mcaIdx = idx
+					mcaRI = rfd
+					foundMca = true
+				}
+			}
+
 		}
-		if strings.Contains(rfd.Name, "seeds.json") {
+
+		if strings.Contains(rfd.Name, "seeds") {
 			foundEventConfig = true
 			eventConfigRI = rfd
 		}
-		if strings.Contains(rfd.Name, ".grid") {
-			gridRI = rfd
-			foundGrid = true
-		}
-		if strings.Contains(rfd.Name, ".met") {
-			metRI = rfd
-			foundMet = true
-		}
-		if strings.Contains(rfd.Name, "TranspositionRegion.gpkg") {
+		if strings.Contains(rfd.Name, "TranspositionRegion") {
 			trgpkgRI = rfd
 			foundTrGpkg = true
 		}
-		if strings.Contains(rfd.Name, "WatershedBoundary.gpkg") {
+		if strings.Contains(rfd.Name, "WatershedBoundary") {
 			wbgpkgRI = rfd
 			foundWbGpkg = true
 		}
-		if strings.Contains(rfd.Name, ".control") {
-			controlRI = rfd
-			foundControl = true
-		}
+
 	}
 	if !foundEventConfig {
 		err := fmt.Errorf("could not find event configuration to find the proper seeds to run sst")
@@ -202,7 +217,7 @@ func computePayload(pm *cc.PluginManager) error {
 		})
 		return err
 	}
-	metbytes, err := pm.GetFile(metRI, 0)
+	metbytes, err := pm.GetFile(metRI, metIdx)
 	if err != nil {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,
@@ -210,7 +225,7 @@ func computePayload(pm *cc.PluginManager) error {
 		})
 		return err
 	}
-	gridbytes, err := pm.GetFile(gridRI, 0)
+	gridbytes, err := pm.GetFile(gridRI, gridIdx)
 	if err != nil {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,
@@ -218,7 +233,7 @@ func computePayload(pm *cc.PluginManager) error {
 		})
 		return err
 	}
-	controlbytes, err := pm.GetFile(controlRI, 0)
+	controlbytes, err := pm.GetFile(controlRI, controlIdx)
 	if err != nil {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,
@@ -246,7 +261,7 @@ func computePayload(pm *cc.PluginManager) error {
 	//update mca file if present
 	mca := hms.Mca{}
 	if foundMca {
-		mcabytes, err := pm.GetFile(mcaRI, 0)
+		mcabytes, err := pm.GetFile(mcaRI, mcaIdx)
 		if err != nil {
 			pm.LogError(cc.Error{
 				ErrorLevel: cc.ERROR,
