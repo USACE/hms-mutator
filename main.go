@@ -77,7 +77,7 @@ func computePayload(pm *cc.PluginManager) error {
 			foundMca = true
 			mcaRI = rfd
 		}
-		if strings.Contains(rfd.Name, "eventconfiguration.json") {
+		if strings.Contains(rfd.Name, "seeds.json") {
 			foundEventConfig = true
 			eventConfigRI = rfd
 		}
