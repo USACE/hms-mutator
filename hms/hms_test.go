@@ -111,7 +111,7 @@ func TestReadSelectUpdateWriteGrid(t *testing.T) {
 	g, _ := ReadGrid(bytes)
 	rnd := rand.New(rand.NewSource(1234))
 	e, _ := g.SelectEvent(rnd.Int63())
-	_ = e.UpdateDSSFile("data/storms.dss")
+	_ = e.UpdateDSSFile()
 	s := string(g.ToBytes(e))
 	fmt.Println(s)
 }
@@ -129,7 +129,7 @@ func TestReadBootstrapSelectUpdateWriteGrid(t *testing.T) {
 		fmt.Printf("Event Name: %v \n", pge.Name)
 	}
 	e, _ := g.SelectEvent(rnd.Int63())
-	_ = e.UpdateDSSFile("data/storms.dss")
+	_ = e.UpdateDSSFile()
 	s := string(g.ToBytes(e))
 	fmt.Println(s)
 }
