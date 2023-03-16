@@ -58,18 +58,20 @@ func (s *Simulation) Compute(eventSeed int64, realizationSeed int64) (hms.Met, h
 	}
 	//transpose
 	x, y, err := s.transpositionModel.Transpose(transpositionSeed, ge)
+
 	if err != nil {
 		return s.metModel, ge, err
 	}
 	//compute offset from control specification
 	offset := s.control.ComputeOffset(ge.StartTime)
+	fmt.Printf("%v,%f,%f,%v\n", ge.Name, x, y, offset)
 	//update met storm name
 	err = s.metModel.UpdateStormName(ge.Name)
 	if err != nil {
 		return s.metModel, ge, err
 	}
 	//update storm center
-	err = s.metModel.UpdateStormCenter(fmt.Sprintf("%v", x), fmt.Sprintf("%v", y))
+	err = s.metModel.UpdateStormCenter(fmt.Sprintf("%f", x), fmt.Sprintf("%f", y))
 	if err != nil {
 		return s.metModel, ge, err
 	}

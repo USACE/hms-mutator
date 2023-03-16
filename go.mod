@@ -16,7 +16,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
-	github.com/usace/cc-go-sdk v0.0.0-20230310020457-073cd8d520e5
+	github.com/usace/cc-go-sdk v0.0.0-20230312015913-bffd1ac1193c
 	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3 // indirect
 	gonum.org/v1/gonum v0.9.3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

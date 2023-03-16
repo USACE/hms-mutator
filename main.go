@@ -49,11 +49,11 @@ func computePayload(pm *cc.PluginManager) error {
 		})
 		return errors.New(fmt.Sprint("expecting at least 3 outputs to be defined, found", len(payload.Outputs)))
 	}
-	if len(payload.Inputs) < 6 {
-		err := errors.New(fmt.Sprint("expecting at least 6 inputs to be defined, found ", len(payload.Inputs)))
+	if len(payload.Inputs) < 4 {
+		err := errors.New(fmt.Sprint("expecting at least 4 inputs to be defined, found ", len(payload.Inputs)))
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.FATAL,
-			Error:      fmt.Sprint("expecting at least 6 inputs to be defined, found ", len(payload.Inputs)),
+			Error:      fmt.Sprint("expecting at least 4 inputs to be defined, found ", len(payload.Inputs)),
 		})
 		return err
 	}
@@ -126,7 +126,7 @@ func computePayload(pm *cc.PluginManager) error {
 		return err
 	}
 	if !foundMca {
-		msg := "no *.mca file detected, variability is only reflected in storm and storm positioning."
+		msg := "no *.mca file detected, variability is only reflected in storm selection and storm positioning in space and time."
 		pm.LogMessage(cc.Message{
 			Message: msg,
 		})
@@ -221,7 +221,7 @@ func computePayload(pm *cc.PluginManager) error {
 	if err != nil {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,
-			Error:      fmt.Errorf("couldnot get bytes for met file").Error(),
+			Error:      fmt.Errorf("could not get bytes for met file").Error(),
 		})
 		return err
 	}
@@ -229,7 +229,7 @@ func computePayload(pm *cc.PluginManager) error {
 	if err != nil {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,
-			Error:      fmt.Errorf("couldnot get bytes for grid file").Error(),
+			Error:      fmt.Errorf("could not get bytes for grid file").Error(),
 		})
 		return err
 	}
@@ -237,7 +237,7 @@ func computePayload(pm *cc.PluginManager) error {
 	if err != nil {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,
-			Error:      fmt.Errorf("couldnot get bytes for control file").Error(),
+			Error:      fmt.Errorf("could not get bytes for control file").Error(),
 		})
 		return err
 	}
@@ -367,12 +367,13 @@ func computePayload(pm *cc.PluginManager) error {
 		//this is to reduce the input data soruce specification for each event in the directory
 		//there could be hundreds of storms in the hms model and we dont want to copy them all
 		//just the one that is selected.
-		projectPathParts := strings.Split(metRI.Paths[0], "\\")
+		projectPathParts := strings.Split(gridRI.Paths[gridIdx], "/")
 		dssPath := ""
 		for i := 0; i < len(projectPathParts)-1; i++ {
-			dssPath = fmt.Sprintf("%v\\%v", dssPath, projectPathParts[i])
+			dssPath = fmt.Sprintf("%v/%v", dssPath, projectPathParts[i])
 		}
-		dssPath = fmt.Sprintf("%v\\%v", dssPath, dssFileName)
+		dssPath = fmt.Sprintf("%v/%v", dssPath, dssFileName)
+		dssPath = strings.Replace(dssPath, "\\", "/", -1)
 		ds := cc.DataSource{
 			Name:      dssFileName,
 			ID:        &uuid.NameSpaceDNS,

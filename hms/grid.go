@@ -174,7 +174,7 @@ func (pge *PrecipGridEvent) OriginalDSSFile() (string, error) {
 }
 func (pge *PrecipGridEvent) UpdateDSSFile() error {
 	//force the name to be constant in the file. "/data/Storm.dss"
-	path := "/data/Storm.dss"
+	path := "data/Storm.dss"
 	for idx, l := range pge.Lines {
 		if strings.Contains(l, DssFileNameKeyword) {
 			pge.Lines[idx] = fmt.Sprintf("%v%v", DssFileNameKeyword, path)

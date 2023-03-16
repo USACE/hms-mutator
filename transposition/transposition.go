@@ -67,7 +67,7 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 	r := rand.New(rand.NewSource(seed))
 	layer := t.transpositionRegionDS.LayerByIndex(0)
 	//defer layer.Definition().Destroy()
-	transpositionRegion := layer.Feature(1)
+	transpositionRegion := layer.Feature(2)
 	defer transpositionRegion.Destroy()
 	if transpositionRegion.IsNull() {
 		fmt.Println("im null...")
@@ -100,10 +100,12 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 		if err != nil {
 			return xval, yval, err
 		}
+
 		//fmt.Println(geom.Envelope())
 		if transpositionRegion.Geometry().Contains(newCenter) {
 			xOffset = xval - pge.CenterX
 			yOffset = yval - pge.CenterY
+
 			//fmt.Printf("Offset(x,y): (%v,%v)\n", xOffset, yOffset)
 			shiftContained := false                           //TODO switch to false and test.
 			shiftedWatershedBoundary := wf.Geometry().Clone() //shift watershed boundary
@@ -129,11 +131,8 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 			if shiftContained {
 				//s, _ := shiftedWatershedBoundary.ToWKT()
 				//fmt.Println(s)
+				//return pge.CenterX, pge.CenterY, nil //for debugging issues with time offsets and to avoid confusion created by different centerings.
 				return xval, yval, nil
-			} else {
-				/*pm.LogMessage(cc.Message{
-					Message: fmt.Sprintf("storm center (%v,%v) rejected due to possible null data\n", xval, yval),
-				})*/
 			}
 		}
 	}

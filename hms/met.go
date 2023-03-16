@@ -11,6 +11,7 @@ var PrecipGridNameKeyword string = "     Precip Grid Name: "
 var StormCenterXKeyword string = "     Storm Center X-coordinate: "
 var StormCenterYKeyword string = "     Storm Center Y-coordinate: "
 var TimeShiftKeyword string = "     Time Shift: " //in minutes Negative is FORWARD.
+var TimeShiftMethodKeyword string = "     Time Shift Method: "
 
 type Met struct {
 	metString string
@@ -99,14 +100,23 @@ func (m *Met) UpdateStormName(stormName string) error {
 }
 func (m *Met) UpdateTimeShift(timeShift string) error {
 	foundTimeShift := false
+	foundTimeShiftMethod := false
 	for idx, l := range m.PrecipMethodParameters.lines {
 		if strings.Contains(l, TimeShiftKeyword) {
 			foundTimeShift = true
 			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift)
+		} else {
+			if strings.Contains(l, TimeShiftMethodKeyword) {
+				m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE")
+				foundTimeShiftMethod = true
+			}
 		}
 	}
 	if !foundTimeShift {
 		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift))
+	}
+	if !foundTimeShiftMethod {
+		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE"))
 	}
 	return nil
 }
