@@ -148,6 +148,9 @@ func (s *WalkSimulation) Walk(eventSeed int64, eventNumber int64) (hms.Met, hms.
 	}
 	//read csv bytes into a map.
 	rmap, err := hms.ReadCsv(s.csvFile)
+	if err != nil {
+		return s.metModel, ge, err
+	}
 	err = s.mcaFile.UpdateRealizations(rmap.Query[ge.Name])
 	if err != nil {
 		return s.metModel, ge, err
