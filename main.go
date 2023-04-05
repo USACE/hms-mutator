@@ -20,10 +20,7 @@ func main() {
 	fmt.Println("hms-mutator!")
 	pm, err := cc.InitPluginManager()
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      "could not initiate plugin manager",
-		})
+		fmt.Println("could not initiate plugin manager")
 		return
 	}
 	err = computePayload(pm)
@@ -42,18 +39,41 @@ func main() {
 }
 func computePayload(pm *cc.PluginManager) error {
 	payload := pm.GetPayload()
-	if len(pm.GetPayload().Outputs) < 3 {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      fmt.Sprint("expecting at least 3 outputs to be defined, found", len(payload.Outputs)),
-		})
-		return errors.New(fmt.Sprint("expecting at least 3 outputs to be defined, found", len(payload.Outputs)))
+	useActualStormName := false
+	stormNameAttribute, ok := payload.Attributes["use_actual_storm_name"]
+	if ok {
+		useActualStormName = stormNameAttribute.(bool)
 	}
-	if len(payload.Inputs) < 4 {
-		err := errors.New(fmt.Sprint("expecting at least 4 inputs to be defined, found ", len(payload.Inputs)))
+	updateRealizationNumbers := false
+	updateRealizationAttribute, rok := payload.Attributes["update_realization_numbers"]
+	if rok {
+		updateRealizationNumbers = updateRealizationAttribute.(bool)
+	}
+	walkGrids := false
+	walkGridsAttribute, gok := payload.Attributes["walk_grids"]
+	if gok {
+		walkGrids = walkGridsAttribute.(bool)
+	}
+	expectedOutputs := 3
+	expectedInputs := 4 //hms model (grid, met, control), watershed boundary, transposition region, seeds
+	if updateRealizationNumbers && walkGrids {
+		//need the mca file too
+		//need the realization numbers file (in the hms model)
+		//dont need transposition nor watershed boundary
+		expectedInputs = 3
+	}
+	if len(pm.GetPayload().Outputs) < expectedOutputs {
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.FATAL,
-			Error:      fmt.Sprint("expecting at least 4 inputs to be defined, found ", len(payload.Inputs)),
+			Error:      fmt.Sprintf("expecting at least %v outputs to be defined, found %v", expectedOutputs, len(payload.Outputs)),
+		})
+		return errors.New(fmt.Sprintf("expecting at least %v outputs to be defined, found %v", expectedOutputs, len(payload.Outputs)))
+	}
+	if len(payload.Inputs) < expectedInputs {
+		err := errors.New(fmt.Sprintf("expecting at least %v inputs to be defined, found %v", expectedInputs, len(payload.Inputs)))
+		pm.LogError(cc.Error{
+			ErrorLevel: cc.FATAL,
+			Error:      fmt.Sprintf("expecting at least %v inputs to be defined, found %v", expectedInputs, len(payload.Inputs)),
 		})
 		return err
 	}
@@ -76,6 +96,9 @@ func computePayload(pm *cc.PluginManager) error {
 	foundTrGpkg := false
 	foundWbGpkg := false
 	foundControl := false
+	csvIdx := 0
+	var csvRI cc.DataSource
+	foundCsv := false
 	for _, rfd := range payload.Inputs {
 		if strings.Contains(rfd.Name, "HMS Model") {
 			for idx, path := range rfd.Paths {
@@ -98,6 +121,11 @@ func computePayload(pm *cc.PluginManager) error {
 					mcaIdx = idx
 					mcaRI = rfd
 					foundMca = true
+				}
+				if strings.Contains(path, ".csv") {
+					csvIdx = idx
+					csvRI = rfd
+					foundCsv = true
 				}
 			}
 
@@ -126,10 +154,27 @@ func computePayload(pm *cc.PluginManager) error {
 		return err
 	}
 	if !foundMca {
+		if updateRealizationNumbers {
+			msg := "no *.mca file detected, cannot update relaization numbers, aborting."
+			pm.LogMessage(cc.Message{
+				Message: msg,
+			})
+			return errors.New("requested to update realization numbers but no mca file was found")
+		}
 		msg := "no *.mca file detected, variability is only reflected in storm selection and storm positioning in space and time."
 		pm.LogMessage(cc.Message{
 			Message: msg,
 		})
+	}
+	if updateRealizationNumbers {
+		if !foundCsv {
+			err := fmt.Errorf("could not find csv files with the storms and realization numbers")
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.FATAL,
+				Error:      err.Error(),
+			})
+			return err
+		}
 	}
 	if !foundGrid {
 		err := fmt.Errorf("could not find grid file for storm definitions")
@@ -148,20 +193,35 @@ func computePayload(pm *cc.PluginManager) error {
 		return err
 	}
 	if !foundTrGpkg {
-		err := fmt.Errorf("could not find gpkg file for transposition region TranspositionBoundary.gpkg")
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
-		return err
+		if updateRealizationNumbers && walkGrids {
+			msg := "no transposition region found, but the attributes for walk grids and update realization numbers are set to true, attempting to continue"
+			pm.LogMessage(cc.Message{
+				Message: msg,
+			})
+		} else {
+			err := fmt.Errorf("could not find gpkg file for transposition region TranspositionBoundary.gpkg")
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.FATAL,
+				Error:      err.Error(),
+			})
+			return err
+		}
+
 	}
 	if !foundWbGpkg {
-		err := fmt.Errorf("could not find gpkg file for watershed boundary WatershedBoundary.gpkg")
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
-		return err
+		if updateRealizationNumbers && walkGrids {
+			msg := "no watershed boundary found, but the attributes for walk grids and update realization numbers are set to true, attempting to continue"
+			pm.LogMessage(cc.Message{
+				Message: msg,
+			})
+		} else {
+			err := fmt.Errorf("could not find gpkg file for watershed boundary WatershedBoundary.gpkg")
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.FATAL,
+				Error:      err.Error(),
+			})
+			return err
+		}
 	}
 	if !foundControl {
 		err := fmt.Errorf("could not find control file for timewindow specifications")
@@ -241,27 +301,37 @@ func computePayload(pm *cc.PluginManager) error {
 		})
 		return err
 	}
-	sim, err := transposition.InitSimulation(trbytes, wbgpkgbytes, metbytes, gridbytes, controlbytes)
-	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.ERROR,
-			Error:      err.Error(),
-		})
-		return err
-	}
-	//compute simulation for given seed set
-	m, ge, err := sim.Compute(seedSet.EventSeed, seedSet.RealizationSeed)
-	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.ERROR,
-			Error:      err.Error(),
-		})
-		return err
-	}
-	//update mca file if present
-	mca := hms.Mca{}
-	if foundMca {
-		mcabytes, err := pm.GetFile(mcaRI, mcaIdx)
+	var ge hms.PrecipGridEvent
+	var m hms.Met
+	var mca hms.Mca
+	var csvbytes []byte
+	var gfbytes []byte
+	if walkGrids && updateRealizationNumbers {
+		if foundMca {
+			mcabytes, err := pm.GetFile(mcaRI, mcaIdx)
+			if err != nil {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.ERROR,
+					Error:      err.Error(),
+				})
+				return err
+			}
+			if foundCsv {
+				csvbytes, err = pm.GetFile(csvRI, csvIdx)
+				if err != nil {
+					pm.LogError(cc.Error{
+						ErrorLevel: cc.ERROR,
+						Error:      err.Error(),
+					})
+					return err
+				}
+			}
+			sim, err := transposition.InitWalkSimulation(metbytes, gridbytes, controlbytes, mcabytes, csvbytes)
+			m, ge, err = sim.Walk(seedSet.EventSeed, int64(pm.EventNumber()))
+			gfbytes = sim.GetGridFileBytes(ge)
+		}
+	} else {
+		sim, err := transposition.InitTranspositionSimulation(trbytes, wbgpkgbytes, metbytes, gridbytes, controlbytes)
 		if err != nil {
 			pm.LogError(cc.Error{
 				ErrorLevel: cc.ERROR,
@@ -269,7 +339,8 @@ func computePayload(pm *cc.PluginManager) error {
 			})
 			return err
 		}
-		mca, err := hms.ReadMca(mcabytes)
+		//compute simulation for given seed set
+		m, ge, err = sim.Compute(seedSet.EventSeed, seedSet.RealizationSeed)
 		if err != nil {
 			pm.LogError(cc.Error{
 				ErrorLevel: cc.ERROR,
@@ -277,8 +348,29 @@ func computePayload(pm *cc.PluginManager) error {
 			})
 			return err
 		}
-		mca.UpdateSeed(seedSet.EventSeed)
+		//update mca file if present
+		if foundMca {
+			mcabytes, err := pm.GetFile(mcaRI, mcaIdx)
+			if err != nil {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.ERROR,
+					Error:      err.Error(),
+				})
+				return err
+			}
+			mca, err := hms.ReadMca(mcabytes)
+			if err != nil {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.ERROR,
+					Error:      err.Error(),
+				})
+				return err
+			}
+			mca.UpdateSeed(seedSet.EventSeed)
+		}
+		gfbytes = sim.GetGridFileBytes(ge)
 	}
+
 	//get met file bytes
 	mbytes, err := m.WriteBytes()
 	if err != nil {
@@ -396,8 +488,14 @@ func computePayload(pm *cc.PluginManager) error {
 			})
 			return err
 		}
-		//update the dss file output to match the agreed upon convention /data/Storm.dss
-		ge.UpdateDSSFile()
+
+		if useActualStormName {
+			ge.UpdateDSSFile(ge.Name)
+		} else {
+			//update the dss file output to match the agreed upon convention /data/Storm.dss
+			ge.UpdateDSSFile("Storm")
+		}
+
 	} else {
 		err := fmt.Errorf("could not find output storms.dss file destination")
 		if err != nil {
@@ -408,10 +506,9 @@ func computePayload(pm *cc.PluginManager) error {
 			return err
 		}
 	}
-
 	//upload updated grid files.
 	if foundGori {
-		gfbytes := sim.GetGridFileBytes(ge)
+
 		pm.PutFile(gfbytes, gori, 0)
 		if err != nil {
 			pm.LogError(cc.Error{
@@ -430,5 +527,6 @@ func computePayload(pm *cc.PluginManager) error {
 			return err
 		}
 	}
+
 	return nil
 }

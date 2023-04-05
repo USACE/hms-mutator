@@ -100,7 +100,7 @@ func TestSimulationCompute(t *testing.T) {
 		t.Fail()
 	}
 	//initialize simulation
-	sim, err := InitSimulation(tbytes, wbytes, mbytes, gbytes, cbytes)
+	sim, err := InitTranspositionSimulation(tbytes, wbytes, mbytes, gbytes, cbytes)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()

@@ -63,13 +63,10 @@ func (mf *Mca) UpdateSeed(seed int64) error {
 	mf.Lines[mf.SeedStringIndex] = fmt.Sprintf("%v%v", SeedKeyword, seed)
 	return nil
 }
-
-/*
-	func (mf *Mca) UpdateRealizations(count int) error {
-		mf.Lines[mf.RealizationIndex] = fmt.Sprintf("%v%v", RealizationsKeyword, count)
-		return nil
-	}
-*/
+func (mf *Mca) UpdateRealizations(count int) error {
+	mf.Lines[mf.RealizationIndex] = fmt.Sprintf("%v%v", RealizationsKeyword, count)
+	return nil
+}
 func (mf Mca) ToBytes() []byte {
 	b := make([]byte, 0)
 	for _, l := range mf.Lines {

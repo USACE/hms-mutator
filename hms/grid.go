@@ -162,7 +162,10 @@ func (gf GridFile) SelectEvent(naturalVariabilitySeed int64) (PrecipGridEvent, e
 	idx := r.Int31n(int32(length))
 	return gf.Events[idx], nil
 }
-
+func (gf GridFile) SelectEventByIndex(idx int64) (PrecipGridEvent, error) {
+	//provide the indexed event
+	return gf.Events[idx-1], nil
+}
 func (pge *PrecipGridEvent) OriginalDSSFile() (string, error) {
 	for _, l := range pge.Lines {
 		if strings.Contains(l, DssFileNameKeyword) {
@@ -172,9 +175,9 @@ func (pge *PrecipGridEvent) OriginalDSSFile() (string, error) {
 	}
 	return "", errors.New("did not find the dss file name keyword")
 }
-func (pge *PrecipGridEvent) UpdateDSSFile() error {
+func (pge *PrecipGridEvent) UpdateDSSFile(stormName string) error {
 	//force the name to be constant in the file. "/data/Storm.dss"
-	path := "data/Storm.dss"
+	path := fmt.Sprintf("data/%v.dss", stormName)
 	for idx, l := range pge.Lines {
 		if strings.Contains(l, DssFileNameKeyword) {
 			pge.Lines[idx] = fmt.Sprintf("%v%v", DssFileNameKeyword, path)
