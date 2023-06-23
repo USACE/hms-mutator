@@ -50,7 +50,7 @@ func TestSampleLocations(t *testing.T) {
 	fmt.Printf("id,name,x,y\n")
 	rng := rand.New(rand.NewSource(1234))
 	for i := 0; i < 1; i++ {
-		ge, _ := gf.SelectEvent(rng.Int63())
+		ge, _, _ := gf.SelectEvent(rng.Int63())
 		x, y, _ := tr.Transpose(rng.Int63(), ge)
 		fmt.Printf("%v,%v,%v,%v\n", i, ge.Name, x, y)
 	}
@@ -106,7 +106,7 @@ func TestSimulationCompute(t *testing.T) {
 		t.Fail()
 	} else {
 		//compute simulation for given seed set
-		m, ge, err := sim.Compute(ss.EventSeed, ss.RealizationSeed)
+		m, ge, _, err := sim.Compute(ss.EventSeed, ss.RealizationSeed)
 		if err != nil {
 			fmt.Println(err)
 			t.Fail()

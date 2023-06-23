@@ -13,6 +13,7 @@ var GridStartKeyword string = "Grid: "
 var GridEndKeyword string = "End:"
 var GridTypeKeyword string = "     Grid Type: "
 var PrecipitationKeyword string = "Precipitation"
+var TemperatureKeyword string = "Temperature"
 var DssPathNameKeyword string = "       DSS Pathname: "
 var DssFileNameKeyword string = "       DSS File Name: "
 var GridStormCenterXKeyword string = "     Storm Center X: "
@@ -25,12 +26,17 @@ type PrecipGridEvent struct {
 	CenterY   float64 //maybe float64?
 	Lines     []string
 }
+type TempGridEvent struct {
+	Name  string
+	Lines []string
+}
 type GridFileInfo struct {
 	Lines []string
 }
 type GridFile struct {
 	GridFileInfo
 	Events []PrecipGridEvent
+	Temps  []TempGridEvent
 }
 
 func ReadGrid(gridResource []byte) (GridFile, error) {
@@ -38,13 +44,17 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 	//loop through and find grids
 	gridstring := string(gridResource)
 	lines := strings.Split(gridstring, "\n") //maybe rn?
-	grids := make([]PrecipGridEvent, 0)
+	precipgrids := make([]PrecipGridEvent, 0)
+	tempgrids := make([]TempGridEvent, 0)
 	var precipGrid PrecipGridEvent
+	var tempGrid TempGridEvent
 	var gridFileInfo GridFileInfo
 	var precipGridLines = make([]string, 0)
+	var tempGridLines = make([]string, 0)
 	var gridLines = make([]string, 0)
 	var gridFound = false
 	var isPrecipGrid = false
+	var isTempGrid = false
 	var foundX = false
 	var foundY = false
 	for _, l := range lines {
@@ -55,14 +65,17 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 		if strings.Contains(l, GridStartKeyword) {
 			gridFound = true
 			precipGridLines = make([]string, 0)
-
+			tempGridLines = make([]string, 0)
 			name := strings.TrimLeft(l, GridStartKeyword)
 			//wont know it is precip for one more line...
 			//so get the name just in case.
 			//add the first line just in case.
 			isPrecipGrid = false
+			isTempGrid = false
 			precipGrid = PrecipGridEvent{Name: name}
+			tempGrid = TempGridEvent{Name: name}
 			precipGridLines = append(precipGridLines, l)
+			tempGridLines = append(tempGridLines, l)
 		}
 		if strings.Contains(l, GridTypeKeyword) {
 			gridType := strings.TrimLeft(l, GridTypeKeyword)
@@ -71,6 +84,11 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 				foundX = false
 				foundY = false
 				//pop the last line off of the gridLines because it is a precip grid not a different grid type.
+				gridLines = gridLines[:len(gridLines)-1]
+			}
+			if gridType == TemperatureKeyword {
+				isTempGrid = true
+				//pop the last line off of the gridLines because it is a temp grid not a different grid type.
 				gridLines = gridLines[:len(gridLines)-1]
 			}
 		}
@@ -97,6 +115,8 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 					}
 				}
 				precipGridLines = append(precipGridLines, l)
+			} else if isTempGrid {
+				tempGridLines = append(tempGridLines, l)
 			} else {
 				gridLines = append(gridLines, l) //adding everythign that is a grid.
 			}
@@ -111,7 +131,7 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 				if isPrecipGrid {
 					if foundX && foundY {
 						precipGrid.Lines = precipGridLines
-						grids = append(grids, precipGrid)
+						precipgrids = append(precipgrids, precipGrid)
 					} else {
 						/*plugin.Log(plugin.Message{
 							Status:    plugin.COMPUTING,
@@ -123,6 +143,9 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 						})*/
 					}
 
+				} else if isTempGrid {
+					tempGrid.Lines = tempGridLines
+					tempgrids = append(tempgrids, tempGrid)
 				}
 			}
 		}
@@ -139,10 +162,10 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 
 	}
 	gridFileInfo.Lines = gridLines
-	if len(grids) == 0 {
-		return GridFile{GridFileInfo: gridFileInfo, Events: grids}, errors.New("found no grids with x and y centers specified, please specify storm centers for transposition")
+	if len(precipgrids) == 0 {
+		return GridFile{GridFileInfo: gridFileInfo, Events: precipgrids}, errors.New("found no grids with x and y centers specified, please specify storm centers for transposition")
 	}
-	return GridFile{GridFileInfo: gridFileInfo, Events: grids}, nil
+	return GridFile{GridFileInfo: gridFileInfo, Events: precipgrids, Temps: tempgrids}, nil
 }
 func (gf *GridFile) Bootstrap(knowledgeUncertaintySeed int64) error {
 	length := len(gf.Events)
@@ -155,12 +178,18 @@ func (gf *GridFile) Bootstrap(knowledgeUncertaintySeed int64) error {
 	gf.Events = updatedList //replace dataset with bootstrap.
 	return nil
 }
-func (gf GridFile) SelectEvent(naturalVariabilitySeed int64) (PrecipGridEvent, error) {
+func (gf GridFile) SelectEvent(naturalVariabilitySeed int64) (PrecipGridEvent, TempGridEvent, error) {
 	//randomly select one event from the list of events
 	length := len(gf.Events)
 	r := rand.New(rand.NewSource(naturalVariabilitySeed))
 	idx := r.Int31n(int32(length))
-	return gf.Events[idx], nil
+	pge := gf.Events[idx]
+	for _, tempEvent := range gf.Temps {
+		if strings.Contains(pge.Name, tempEvent.Name) {
+			return pge, tempEvent, nil
+		}
+	}
+	return pge, TempGridEvent{}, nil
 }
 func (gf GridFile) SelectEventByIndex(idx int64) (PrecipGridEvent, error) {
 	//provide the indexed event
@@ -185,7 +214,17 @@ func (pge *PrecipGridEvent) UpdateDSSFile(stormName string) error {
 	}
 	return nil
 }
-func (gf GridFile) ToBytes(precipEvent PrecipGridEvent) []byte {
+func (pge *TempGridEvent) UpdateDSSFile(stormName string) error {
+	//force the name to be constant in the file. "/data/Storm.dss"
+	path := fmt.Sprintf("data/%v.dss", stormName)
+	for idx, l := range pge.Lines {
+		if strings.Contains(l, DssFileNameKeyword) {
+			pge.Lines[idx] = fmt.Sprintf("%v%v", DssFileNameKeyword, path)
+		}
+	}
+	return nil
+}
+func (gf GridFile) ToBytes(precipEvent PrecipGridEvent, tempEvent TempGridEvent) []byte {
 	b := make([]byte, 0)
 	for _, l := range gf.GridFileInfo.Lines {
 		b = append(b, l...)
@@ -199,5 +238,19 @@ func (gf GridFile) ToBytes(precipEvent PrecipGridEvent) []byte {
 		b = append(b, l...)
 		b = append(b, "\r\n"...)
 	}
+	if tempEvent.Name == "" {
+		gridName := precipEvent.Name
+		gridNameSansAORC := strings.Trim(gridName, "AORC ")
+		gridNameSansAORC = strings.ReplaceAll(gridNameSansAORC, " ", "_")
+		gridNameSansAORC = strings.ReplaceAll(gridNameSansAORC, "-", "")
+		tempMonkeyPatch := fmt.Sprintf("Grid: %v\n     Grid Type: Temperature\n     Last Modified Date: 9 August 2022\n     Last Modified Time: 17:14:25\n     Reference Height Units: Meters\n     Reference Height: 10.0\n     Data Source Type: External DSS\n     Variant: Variant-1\n       Last Variant Modified Date: 9 August 2022\n       Last Variant Modified Time: 17:14:25\n       Default Variant: Yes\n       DSS File Name: data/Storm.dss\n       DSS Pathname: /SHG2K/KANAWHA/TEMPERATURE///AORC/\n     End Variant: Variant-1\n     Use Lookup Table: No\nEnd:\n", gridName)
+		b = append(b, tempMonkeyPatch...)
+	} else {
+		for _, l := range tempEvent.Lines {
+			b = append(b, l...)
+			b = append(b, "\r\n"...)
+		}
+	}
+
 	return b
 }

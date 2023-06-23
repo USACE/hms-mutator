@@ -79,7 +79,7 @@ func InitTranspositionSimulation(trgpkgRI []byte, wbgpkgRI []byte, metRI []byte,
 	return s, nil
 
 }
-func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64) (hms.Met, hms.PrecipGridEvent, error) {
+func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64) (hms.Met, hms.PrecipGridEvent, hms.TempGridEvent, error) {
 	nvrng := rand.New(rand.NewSource(eventSeed))
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
@@ -88,15 +88,15 @@ func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64
 	//bootstrap events
 	s.gridFile.Bootstrap(bootstrapSeed)
 	//select event
-	ge, err := s.gridFile.SelectEvent(stormSeed)
+	ge, te, err := s.gridFile.SelectEvent(stormSeed)
 	if err != nil {
-		return s.metModel, ge, err
+		return s.metModel, ge, te, err
 	}
 	//transpose
 	x, y, err := s.transpositionModel.Transpose(transpositionSeed, ge)
 
 	if err != nil {
-		return s.metModel, ge, err
+		return s.metModel, ge, te, err
 	}
 	//compute offset from control specification
 	offset := s.control.ComputeOffset(ge.StartTime)
@@ -104,19 +104,19 @@ func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64
 	//update met storm name
 	err = s.metModel.UpdateStormName(ge.Name)
 	if err != nil {
-		return s.metModel, ge, err
+		return s.metModel, ge, te, err
 	}
 	//update storm center
 	err = s.metModel.UpdateStormCenter(fmt.Sprintf("%f", x), fmt.Sprintf("%f", y))
 	if err != nil {
-		return s.metModel, ge, err
+		return s.metModel, ge, te, err
 	}
 	//update timeshift
 	err = s.metModel.UpdateTimeShift(fmt.Sprintf("%v", offset))
 	if err != nil {
-		return s.metModel, ge, err
+		return s.metModel, ge, te, err
 	}
-	return s.metModel, ge, nil
+	return s.metModel, ge, te, nil
 }
 func (s *WalkSimulation) Walk(eventSeed int64, eventNumber int64) (hms.Met, hms.PrecipGridEvent, error) {
 	nvrng := rand.New(rand.NewSource(eventSeed))
@@ -157,9 +157,9 @@ func (s *WalkSimulation) Walk(eventSeed int64, eventNumber int64) (hms.Met, hms.
 	}
 	return s.metModel, ge, nil
 }
-func (s TranspositionSimulation) GetGridFileBytes(precipevent hms.PrecipGridEvent) []byte {
-	return s.gridFile.ToBytes(precipevent)
+func (s TranspositionSimulation) GetGridFileBytes(precipevent hms.PrecipGridEvent, tempevent hms.TempGridEvent) []byte {
+	return s.gridFile.ToBytes(precipevent, tempevent)
 }
-func (s WalkSimulation) GetGridFileBytes(precipevent hms.PrecipGridEvent) []byte {
-	return s.gridFile.ToBytes(precipevent)
+func (s WalkSimulation) GetGridFileBytes(precipevent hms.PrecipGridEvent, tempevent hms.TempGridEvent) []byte {
+	return s.gridFile.ToBytes(precipevent, tempevent)
 }

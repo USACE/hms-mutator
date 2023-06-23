@@ -302,10 +302,12 @@ func computePayload(pm *cc.PluginManager) error {
 		return err
 	}
 	var ge hms.PrecipGridEvent
+	var te hms.TempGridEvent
 	var m hms.Met
 	var mca hms.Mca
 	var csvbytes []byte
 	var gfbytes []byte
+	var originalDssPath string
 	if walkGrids && updateRealizationNumbers {
 		if foundMca {
 			mcabytes, err := pm.GetFile(mcaRI, mcaIdx)
@@ -328,7 +330,8 @@ func computePayload(pm *cc.PluginManager) error {
 			}
 			sim, err := transposition.InitWalkSimulation(metbytes, gridbytes, controlbytes, mcabytes, csvbytes)
 			m, ge, err = sim.Walk(seedSet.EventSeed, int64(pm.EventNumber()))
-			gfbytes = sim.GetGridFileBytes(ge)
+			originalDssPath, _ = ge.OriginalDSSFile()
+			gfbytes = sim.GetGridFileBytes(ge, hms.TempGridEvent{})
 		}
 	} else {
 		sim, err := transposition.InitTranspositionSimulation(trbytes, wbgpkgbytes, metbytes, gridbytes, controlbytes)
@@ -340,7 +343,7 @@ func computePayload(pm *cc.PluginManager) error {
 			return err
 		}
 		//compute simulation for given seed set
-		m, ge, err = sim.Compute(seedSet.EventSeed, seedSet.RealizationSeed)
+		m, ge, te, err = sim.Compute(seedSet.EventSeed, seedSet.RealizationSeed)
 		if err != nil {
 			pm.LogError(cc.Error{
 				ErrorLevel: cc.ERROR,
@@ -368,7 +371,15 @@ func computePayload(pm *cc.PluginManager) error {
 			}
 			mca.UpdateSeed(seedSet.EventSeed)
 		}
-		gfbytes = sim.GetGridFileBytes(ge)
+		originalDssPath, _ = ge.OriginalDSSFile()
+		if useActualStormName {
+			ge.UpdateDSSFile(ge.Name)
+		} else {
+			//update the dss file output to match the agreed upon convention /data/Storm.dss
+			ge.UpdateDSSFile("Storm")
+			te.UpdateDSSFile("Storm")
+		}
+		gfbytes = sim.GetGridFileBytes(ge, te)
 	}
 
 	//get met file bytes
@@ -446,14 +457,14 @@ func computePayload(pm *cc.PluginManager) error {
 
 	//upload correct dss file
 	if foundDori {
-		dssFileName, err := ge.OriginalDSSFile()
-		if err != nil {
-			pm.LogError(cc.Error{
-				ErrorLevel: cc.ERROR,
-				Error:      err.Error(),
-			})
-			return err
-		}
+		dssFileName := originalDssPath
+		//if err != nil {
+		//	pm.LogError(cc.Error{
+		//		ErrorLevel: cc.ERROR,
+		//		Error:      err.Error(),
+		//	})
+		//	return err
+		//}
 		//leverage the hms project directory structure
 		//danger zone!!!! this is risky because the data could be missing
 		//this is to reduce the input data soruce specification for each event in the directory
@@ -464,7 +475,7 @@ func computePayload(pm *cc.PluginManager) error {
 		for i := 0; i < len(projectPathParts)-1; i++ {
 			dssPath = fmt.Sprintf("%v/%v", dssPath, projectPathParts[i])
 		}
-		dssPath = fmt.Sprintf("%v/%v", dssPath, dssFileName)
+		dssPath = fmt.Sprintf("%v%v", dssPath, dssFileName)
 		dssPath = strings.Replace(dssPath, "\\", "/", -1)
 		ds := cc.DataSource{
 			Name:      dssFileName,
@@ -487,13 +498,6 @@ func computePayload(pm *cc.PluginManager) error {
 				Error:      err.Error(),
 			})
 			return err
-		}
-
-		if useActualStormName {
-			ge.UpdateDSSFile(ge.Name)
-		} else {
-			//update the dss file output to match the agreed upon convention /data/Storm.dss
-			ge.UpdateDSSFile("Storm")
 		}
 
 	} else {
