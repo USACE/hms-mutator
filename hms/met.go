@@ -177,10 +177,13 @@ func (m Met) WriteBytes() ([]byte, error) {
 		filestring = fmt.Sprintf("%v\r\n%v", filestring, l)
 	}
 	filestring = fmt.Sprintf("%v\r\n%v\r\n", filestring, "End:")
-	for _, l := range m.tempmethod.lines {
-		filestring = fmt.Sprintf("%v\r\n%v", filestring, l)
+	if len(m.tempmethod.lines) > 2 {
+		for _, l := range m.tempmethod.lines {
+			filestring = fmt.Sprintf("%v\r\n%v", filestring, l)
+		}
+		filestring = fmt.Sprintf("%v\r\n%v\r\n", filestring, "End:")
+
 	}
-	filestring = fmt.Sprintf("%v\r\n%v\r\n", filestring, "End:")
 	bytes := []byte(filestring)
 	return bytes, nil
 }
