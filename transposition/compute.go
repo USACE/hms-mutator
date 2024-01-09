@@ -13,69 +13,20 @@ type TranspositionSimulation struct {
 	gridFile           hms.GridFile
 	control            hms.Control
 }
-type WalkSimulation struct {
-	metModel hms.Met
-	mcaFile  hms.Mca
-	gridFile hms.GridFile
-	control  hms.Control
-	csvFile  []byte
-}
 
-func InitWalkSimulation(metRI []byte, gridRI []byte, controlRI []byte, mcaRI []byte, csvRI []byte) (WalkSimulation, error) {
-	s := WalkSimulation{}
-	//read grid file
-	gf, err := hms.ReadGrid(gridRI)
-	if err != nil {
-		return s, err
+func InitTranspositionSimulation(trgpkgRI []byte, wbgpkgRI []byte, metFile hms.Met, gridFile hms.GridFile, controlFile hms.Control) (TranspositionSimulation, error) {
+	s := TranspositionSimulation{
+		transpositionModel: Model{},
+		metModel:           metFile,
+		gridFile:           gridFile,
+		control:            controlFile,
 	}
-	s.gridFile = gf
-	//read control
-	c, err := hms.ReadControl(controlRI)
-	if err != nil {
-		return s, err
-	}
-	s.control = c
-	//read met file
-	m, err := hms.ReadMet(metRI)
-	if err != nil {
-		return s, err
-	}
-	s.metModel = m
-	//read mca file
-	mca, err := hms.ReadMca(mcaRI)
-	if err != nil {
-		return s, err
-	}
-	s.mcaFile = mca
-	s.csvFile = csvRI
-	return s, nil
-}
-func InitTranspositionSimulation(trgpkgRI []byte, wbgpkgRI []byte, metRI []byte, gridRI []byte, controlRI []byte) (TranspositionSimulation, error) {
-	s := TranspositionSimulation{}
-	//read grid file
-	gf, err := hms.ReadGrid(gridRI)
-	if err != nil {
-		return s, err
-	}
-	s.gridFile = gf
 	//initialize transposition region
 	t, err := InitModel(trgpkgRI, wbgpkgRI) //TODO fix this.
 	if err != nil {
 		return s, err
 	}
 	s.transpositionModel = t
-	//read control
-	c, err := hms.ReadControl(controlRI)
-	if err != nil {
-		return s, err
-	}
-	s.control = c
-	//read met file
-	m, err := hms.ReadMet(metRI)
-	if err != nil {
-		return s, err
-	}
-	s.metModel = m
 	return s, nil
 
 }
@@ -118,48 +69,6 @@ func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64
 	}
 	return s.metModel, ge, te, nil
 }
-func (s *WalkSimulation) Walk(eventSeed int64, eventNumber int64) (hms.Met, hms.PrecipGridEvent, error) {
-	nvrng := rand.New(rand.NewSource(eventSeed))
-	stormSeed := nvrng.Int63()
-	//select event
-	ge, err := s.gridFile.SelectEventByIndex(eventNumber)
-	if err != nil {
-		return s.metModel, ge, err
-	}
-	if err != nil {
-		return s.metModel, ge, err
-	}
-	//update met storm name
-	err = s.metModel.UpdateStormName(ge.Name)
-	if err != nil {
-		return s.metModel, ge, err
-	}
-	//update timeshift
-	//compute offset from control specification
-	offset := s.control.ComputeOffset(ge.StartTime)
-	fmt.Printf("%v,%v\n", ge.Name, offset)
-	err = s.metModel.UpdateTimeShift(fmt.Sprintf("%v", offset))
-	if err != nil {
-		return s.metModel, ge, err
-	}
-	err = s.mcaFile.UpdateSeed(stormSeed) //using event seed because we need to use a different seed for each storm
-	if err != nil {
-		return s.metModel, ge, err
-	}
-	//read csv bytes into a map.
-	rmap, err := hms.ReadCsv(s.csvFile)
-	if err != nil {
-		return s.metModel, ge, err
-	}
-	err = s.mcaFile.UpdateRealizations(rmap.Query[ge.Name])
-	if err != nil {
-		return s.metModel, ge, err
-	}
-	return s.metModel, ge, nil
-}
 func (s TranspositionSimulation) GetGridFileBytes(precipevent hms.PrecipGridEvent, tempevent hms.TempGridEvent) []byte {
-	return s.gridFile.ToBytes(precipevent, tempevent)
-}
-func (s WalkSimulation) GetGridFileBytes(precipevent hms.PrecipGridEvent, tempevent hms.TempGridEvent) []byte {
 	return s.gridFile.ToBytes(precipevent, tempevent)
 }

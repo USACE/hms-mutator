@@ -99,8 +99,12 @@ func TestSimulationCompute(t *testing.T) {
 		fmt.Println(err)
 		t.Fail()
 	}
+	gridFile, err := hms.ReadGrid(gbytes)
+	metFile, err := hms.ReadMet(mbytes)
+	controlFile, err := hms.ReadControl(cbytes)
+
 	//initialize simulation
-	sim, err := InitTranspositionSimulation(tbytes, wbytes, mbytes, gbytes, cbytes)
+	sim, err := InitTranspositionSimulation(tbytes, wbytes, metFile, gridFile, controlFile)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()

@@ -66,11 +66,11 @@ func InitModel(transpositionRegion []byte, watershedBoundary []byte) (Model, err
 func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64, error) {
 	r := rand.New(rand.NewSource(seed))
 	layer := t.transpositionRegionDS.LayerByIndex(0)
-	fmt.Printf("transposition Layers %v\n", t.watershedBoundaryDS.LayerCount())
-	tfc, _ := layer.FeatureCount(true)
-	fmt.Printf("watershed features in layer 0 %v\n", tfc)
+	//fmt.Printf("transposition Layers %v\n", t.watershedBoundaryDS.LayerCount())
+	//tfc, _ := layer.FeatureCount(true)
+	//fmt.Printf("watershed features in layer 0 %v\n", tfc)
 	//defer layer.Definition().Destroy()
-	transpositionRegion := layer.Feature(1)
+	transpositionRegion := layer.NextFeature()
 	defer transpositionRegion.Destroy()
 	if transpositionRegion.IsNull() {
 		fmt.Println("im null...")
@@ -80,10 +80,10 @@ func (t Model) Transpose(seed int64, pge hms.PrecipGridEvent) (float64, float64,
 	}
 
 	wlayer := t.watershedBoundaryDS.LayerByIndex(0)
-	fmt.Printf("watershed Layers %v\n", t.watershedBoundaryDS.LayerCount())
-	fc, _ := wlayer.FeatureCount(true)
-	fmt.Printf("watershed features in layer 0 %v\n", fc)
-	wf := wlayer.Feature(1)
+	//fmt.Printf("watershed Layers %v\n", t.watershedBoundaryDS.LayerCount())
+	//fc, _ := wlayer.FeatureCount(true)
+	//fmt.Printf("watershed features in layer 0 %v\n", fc)
+	wf := wlayer.NextFeature()
 	defer wf.Destroy()
 	if wf.Geometry().Type() != 3 {
 		return 0, 0, errors.New("watershed boundary geometry not a simple polygon")
