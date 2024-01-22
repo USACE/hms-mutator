@@ -26,6 +26,15 @@ type StratifiedComputeResult struct {
 	CandiateLocations utils.CoordinateList
 	GridFiles         map[string][]byte
 }
+type ValidLocationsComputeResult struct {
+	AllStormsAllLocations []LocationInfo
+	StormMap              map[string]utils.CoordinateList
+}
+type LocationInfo struct {
+	StormName  string
+	Coordinate utils.Coordinate
+	IsValid    bool
+}
 
 const LOCALDIR = "/app/data/"
 const COORDFILE = "locations.csv"
@@ -68,25 +77,28 @@ func (sc StratifiedCompute) Compute() (StratifiedComputeResult, error) {
 	}
 	return result, nil
 }
-func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource, pm *cc.PluginManager) (map[string]utils.CoordinateList, error) {
+func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource) (ValidLocationsComputeResult, error) {
+	var computeResult ValidLocationsComputeResult
+	allStormsAllLocations := make([]LocationInfo, 0)
 	validLocationMap := make(map[string]utils.CoordinateList, 0)
 	//generate of candidate storm centers.
 	candidateStormCenters, err := sc.generateStormCenters()
 	if err != nil {
-		return validLocationMap, err
+		return computeResult, err
 	}
 	//take list of cell centers for the study area
 	studyAreaCellCenters, err := generateUniformPointList(sc.StudyAreaPolygon, sc.Spacing)
 	if err != nil {
-		return validLocationMap, err
+		return computeResult, err
 	}
 	ref := gdal.CreateSpatialReference("")
 	ref.FromEPSG(5070)
 	outref := gdal.CreateSpatialReference("")
 	outref.FromEPSG(4326)
-	root := path.Dir(inputRoot.DataPaths[0])
+	root := path.Dir(inputRoot.Paths[0])
 	//could be a go routine at this level
 	//loop through the storms in the grid file(in order for simplicity)
+	stormcenterbytes := make([]byte, 0)
 	for _, storm := range sc.GridFile.Events {
 		//create a validlocation coordinate list.
 		validLocations := utils.CoordinateList{Coordinates: make([]utils.Coordinate, 0)}
@@ -94,25 +106,31 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource, pm 
 
 		stormCenter, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)\n", storm.CenterX, storm.CenterY), ref)
 		if err != nil {
-			return validLocationMap, err
+			return computeResult, err
 		}
 		err = stormCenter.TransformTo(outref)
 		if err != nil {
-			return validLocationMap, err
+			return computeResult, err
 		}
 		stormCoord := utils.Coordinate{X: stormCenter.Y(0), Y: stormCenter.X(0)}
+		stormcenterbytes = append(stormcenterbytes, fmt.Sprintf("%v,%v,%v\n", storm.Name, stormCoord.X, stormCoord.Y)...)
 		//determine the start date of the storm
 		startDate := strings.Split(storm.Name, " ")[1]
 		//create a vsis3 path to that tif
 		tr, err := utils.InitTifReader(fmt.Sprintf("%v/%v.tif", root, startDate)) //get root path from one of the input data sources?
 		if err != nil {
-			return validLocationMap, err
+			return computeResult, err
 		}
 		defer tr.Close()
 
 		//fmt.Println(time.Now())
 		//loop through each point in the candidate storm centers
 		for _, candidate := range candidateStormCenters.Coordinates {
+			locationInfo := LocationInfo{
+				StormName:  storm.Name,
+				Coordinate: candidate,
+				IsValid:    false,
+			}
 			//calculate an offset from the center to the new destination location
 			offset := candidate.DetermineXandYOffset(stormCoord)
 			//invert that offset
@@ -136,14 +154,18 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource, pm 
 				}
 			}
 			if hasPrecipitation && !hasNull {
+				locationInfo.IsValid = true
 				validLocations.Coordinates = append(validLocations.Coordinates, candidate)
 			}
+			allStormsAllLocations = append(allStormsAllLocations, locationInfo)
 			//next cell center
 		} //next transposition location
 		validLocationMap[fmt.Sprintf("%v.csv", startDate)] = validLocations
 	} //next storm
-
-	return validLocationMap, nil
+	computeResult.StormMap = validLocationMap
+	computeResult.AllStormsAllLocations = allStormsAllLocations
+	fmt.Println(string(stormcenterbytes))
+	return computeResult, nil
 }
 func (sc StratifiedCompute) generateStormCenters() (utils.CoordinateList, error) {
 	return generateUniformPointList(sc.TranspositionPolygon, sc.Spacing)

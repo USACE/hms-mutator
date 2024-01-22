@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"path"
 	"strings"
 
@@ -230,7 +231,7 @@ func main() {
 				return
 			}
 			inputSource, err := pm.GetInputDataSource("Cumulative Grids")
-			output, err := sla.DetermineValidLocations(inputSource, pm) //update to be based on output location?
+			output, err := sla.DetermineValidLocations(inputSource) //update to be based on output location?
 			if err != nil {
 				pm.LogError(cc.Error{
 					ErrorLevel: cc.FATAL,
@@ -247,10 +248,27 @@ func main() {
 				return
 			}
 			root := path.Dir(outputDataSource.DataPaths[0])
-			for k, v := range output {
+			for k, v := range output.StormMap {
 				outputDataSource.Paths[0] = fmt.Sprintf("%v/%v.csv", root, k)
 				pm.PutFile(v.ToBytes(), outputDataSource, 0)
 			}
+			outputDataSource.Paths[0] = fmt.Sprintf("%v/%v.csv", root, "AllStormsAllLocations")
+			outbytes := make([]byte, 0)
+			outbytes = append(outbytes, "StormName,X,Y,IsValid"...)
+			//create random list of ints
+			indexes := make([]int, len(output.AllStormsAllLocations))
+			rand := rand.New(rand.NewSource(945631))
+			for i := 0; i < len(indexes); i++ {
+				j := rand.Intn(i + 1)
+				if i != j {
+					indexes[i] = indexes[j]
+				}
+				indexes[j] = i
+			}
+			for i, _ := range output.AllStormsAllLocations {
+				outbytes = append(outbytes, fmt.Sprintf("%v,%v,%v,%v\n", output.AllStormsAllLocations[indexes[i]].StormName, output.AllStormsAllLocations[indexes[i]].Coordinate.X, output.AllStormsAllLocations[indexes[i]].Coordinate.Y, output.AllStormsAllLocations[indexes[i]].IsValid)...)
+			}
+			pm.PutFile(outbytes, outputDataSource, 0)
 		}
 	}
 	if err != nil {
