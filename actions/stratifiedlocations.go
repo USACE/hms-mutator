@@ -93,16 +93,23 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource, pm 
 		//determine the center of the storm.
 
 		stormCenter, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)\n", storm.CenterX, storm.CenterY), ref)
+		if err != nil {
+			return validLocationMap, err
+		}
 		err = stormCenter.TransformTo(outref)
+		if err != nil {
+			return validLocationMap, err
+		}
 		stormCoord := utils.Coordinate{X: stormCenter.Y(0), Y: stormCenter.X(0)}
 		//determine the start date of the storm
 		startDate := strings.Split(storm.Name, " ")[1]
 		//create a vsis3 path to that tif
 		tr, err := utils.InitTifReader(fmt.Sprintf("%v/%v.tif", root, startDate)) //get root path from one of the input data sources?
-		defer tr.Close()
 		if err != nil {
 			return validLocationMap, err
 		}
+		defer tr.Close()
+
 		//fmt.Println(time.Now())
 		//loop through each point in the candidate storm centers
 		for _, candidate := range candidateStormCenters.Coordinates {
@@ -112,6 +119,8 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource, pm 
 			offset.X = -offset.X
 			offset.Y = -offset.Y
 			//loop through each point in the cell centers for the study area
+			hasPrecipitation := false
+			hasNull := false
 			for _, cellCenter := range studyAreaCellCenters.Coordinates {
 				//offset the point by the inverted offset
 				cellCenter.ShiftPoint(offset)
@@ -119,13 +128,17 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource, pm 
 				value, err := tr.Query(cellCenter)
 				if err != nil {
 					//null or out of tif range, reject
+					hasNull = true
 					break //if data is null reject location
 				}
-				if value > sc.AcceptanceDepthThreshold { //if data is greater than 0 in any cell accept location //break
-					validLocations.Coordinates = append(validLocations.Coordinates, candidate)
-					break
+				if value > sc.AcceptanceDepthThreshold { //if data is greater than 0 in any cell accept location
+					hasPrecipitation = true
 				}
-			} //next cell center
+			}
+			if hasPrecipitation && !hasNull {
+				validLocations.Coordinates = append(validLocations.Coordinates, candidate)
+			}
+			//next cell center
 		} //next transposition location
 		validLocationMap[fmt.Sprintf("%v.csv", startDate)] = validLocations
 	} //next storm

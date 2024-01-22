@@ -103,6 +103,7 @@ func TestValidStratifiedLocations(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
+
 	for k, v := range vmap {
 		fmt.Print(fmt.Sprintf("%v: %v\n", k, len(v.Coordinates)))
 	}
