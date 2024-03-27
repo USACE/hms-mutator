@@ -122,21 +122,21 @@ func main() {
 				})
 				return
 			}
-			gridOutputDataSource, err := pm.GetOutputDataSource("Grid File")
+			dssGridCacheDataSource, err := pm.GetInputDataSource("DSS Grid Cache")
 			if err != nil {
 				pm.LogError(cc.Error{
 					ErrorLevel: cc.FATAL,
-					Error:      "could not find grid output datasource",
+					Error:      "could not find DSS Grid Cache datasource",
 				})
 				return
 			}
-			root := path.Dir(gridOutputDataSource.DataPaths[0])
+			root := path.Dir(dssGridCacheDataSource.DataPaths[0])
 			stormDataSource := cc.DataSource{
 				Name:      "DssFile",
 				ID:        &uuid.NameSpaceDNS,
 				Paths:     []string{fmt.Sprintf("%v/%v", root, output.StormName)},
 				DataPaths: []string{},
-				StoreName: gridOutputDataSource.StoreName,
+				StoreName: dssGridCacheDataSource.StoreName,
 			}
 			dssBytes, err := pm.GetFile(stormDataSource, 0)
 			if err != nil {
@@ -315,7 +315,7 @@ func getInputBytes(keyword string, extension string, payload cc.Payload, pm *cc.
 	return returnBytes, nil
 }
 func putOutputBytes(data []byte, keyword string, payload cc.Payload, pm *cc.PluginManager) error {
-	output, err := pm.GetInputDataSource(keyword)
+	output, err := pm.GetOutputDataSource(keyword)
 	if err != nil {
 		return err
 	}
