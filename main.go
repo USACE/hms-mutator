@@ -162,7 +162,7 @@ func main() {
 				})
 				return
 			}
-			err = putOutputBytes(output.GridBytes, "Met File", payload, pm)
+			err = putOutputBytes(output.MetBytes, "Met File", payload, pm)
 			if err != nil {
 				pm.LogError(cc.Error{
 					ErrorLevel: cc.FATAL,
@@ -171,7 +171,7 @@ func main() {
 				return
 			}
 			if foundMCA {
-				err = putOutputBytes(output.GridBytes, "MCA File", payload, pm)
+				err = putOutputBytes(output.McaBytes, "MCA File", payload, pm)
 				if err != nil {
 					pm.LogError(cc.Error{
 						ErrorLevel: cc.FATAL,
