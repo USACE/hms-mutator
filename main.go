@@ -111,6 +111,26 @@ func main() {
 
 	for _, a := range payload.Actions {
 		switch a.Name {
+		case "select_random_basin":
+			basinDS, err := pm.GetInputDataSource("Input_Basin_Directory")
+			if err != nil {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.FATAL,
+					Error:      err.Error(),
+				})
+				return
+			}
+			outBasinDS, err := pm.GetOutputDataSource("Output_Basin_Directory")
+			if err != nil {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.FATAL,
+					Error:      err.Error(),
+				})
+				return
+			}
+			srb := actions.InitSelectBasinAction(a, seedSet, basinDS, outBasinDS)
+			srb.Compute()
+
 		case "single_stochastic_transposition":
 			sst := actions.InitSingleStochasticTransposition(pm, gridFile, metFile, controlFile, foundMCA, mcaFile, seedSet, transpositionDomainBytes, watershedDomainBytes)
 

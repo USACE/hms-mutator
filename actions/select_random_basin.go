@@ -22,15 +22,17 @@ type SelectBasinAction struct {
 
 func InitSelectBasinAction(action cc.Action, seedSet plugin.SeedSet, inputDs cc.DataSource, outputDS cc.DataSource) *SelectBasinAction {
 	sba := SelectBasinAction{
-		action:  action,
-		seedSet: seedSet,
+		action:   action,
+		seedSet:  seedSet,
+		inputDS:  inputDs,
+		outputDS: outputDS,
 	}
 	return &sba
 }
 func (sba SelectBasinAction) Compute() error {
 	//get range of basin scenarios (ints between 0 and n?)
 	maxbasinid := sba.action.Parameters.GetIntOrFail("maxBasinid")
-	basinExtension := sba.action.Parameters.GetStringOrFail("basinExstension")
+	basinExtension := sba.action.Parameters.GetStringOrFail("basinExtension")
 	targetBasinFileName := sba.action.Parameters.GetStringOrFail("targetBasinFileName")
 	//generate a natural variabiilty seed generator
 	rng := rand.New(rand.NewSource(sba.seedSet.EventSeed))
