@@ -322,8 +322,8 @@ func getInputBytes(keyword string, extension string, payload cc.Payload, pm *cc.
 		if strings.Contains(input.Name, keyword) {
 			index := 0
 			if extension != "" {
-				for i, dataPath := range input.DataPaths {
-					if strings.Contains(dataPath, extension) {
+				for i, Path := range input.Paths {
+					if strings.Contains(Path, extension) {
 						index = i
 					}
 				}
