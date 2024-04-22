@@ -61,8 +61,9 @@ func main() {
 		return
 	}
 	foundMCA := false
-	mcaFileBytes, err := getInputBytes("HMS Model", ".control", payload, pm)
+	mcaFileBytes, err := getInputBytes("HMS Model", ".mca", payload, pm)
 	if err != nil {
+		err = nil
 		pm.LogMessage(cc.Message{
 			Message: "no *.mca file detected, variability is only reflected in storm selection and storm positioning in space and time.",
 		})
