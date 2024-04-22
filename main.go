@@ -151,11 +151,12 @@ func main() {
 				})
 				return
 			}
-			root := path.Dir(dssGridCacheDataSource.DataPaths[0])
+			root := dssGridCacheDataSource.Paths[0]
+			stormName := strings.Replace(output.StormName, "\\", "/", -1)
 			stormDataSource := cc.DataSource{
 				Name:      "DssFile",
 				ID:        &uuid.NameSpaceDNS,
-				Paths:     []string{fmt.Sprintf("%v/%v", root, output.StormName)},
+				Paths:     []string{fmt.Sprintf("%v%v", root, stormName)},
 				DataPaths: []string{},
 				StoreName: dssGridCacheDataSource.StoreName,
 			}
@@ -322,18 +323,26 @@ func getInputBytes(keyword string, extension string, payload cc.Payload, pm *cc.
 	for _, input := range payload.Inputs {
 		if strings.Contains(input.Name, keyword) {
 			index := 0
+			has := false
 			if extension != "" {
 				for i, Path := range input.Paths {
 					if strings.Contains(Path, extension) {
 						index = i
+						has = true
 					}
 				}
-
+			} else {
+				has = true
 			}
-			return pm.GetFile(input, index)
+			if has {
+				return pm.GetFile(input, index)
+			} else {
+				return returnBytes, errors.New("could not find extension " + extension)
+			}
+
 		}
 	}
-	return returnBytes, nil
+	return returnBytes, errors.New("could not find keyword " + keyword)
 }
 func putOutputBytes(data []byte, keyword string, payload cc.Payload, pm *cc.PluginManager) error {
 	output, err := pm.GetOutputDataSource(keyword)
