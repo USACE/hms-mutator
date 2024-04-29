@@ -18,7 +18,7 @@ func InitTifReader(fp string) (TifReader, error) {
 	//read the file path
 	//make sure it is a tif
 	//fmt.Println("Connecting to: " + fp)
-	ds, err := gdal.Open(fp, gdal.ReadOnly)
+	ds, err := gdal.Open(fp, gdal.Access(gdal.Read))
 	if err != nil {
 		return TifReader{}, errors.New("Cannot connect to tif at path " + fp + err.Error())
 	}
@@ -45,7 +45,7 @@ func (cr *TifReader) Query(c Coordinate) (float64, error) {
 	if py < 0 || py > rb.YSize() {
 		return cr.nodata, errors.New("Y is out of range")
 	}
-	err := rb.IO(gdal.Read, px, py, 1, 1, buffer, 1, 1, 0, 0)
+	err := rb.IO(gdal.RWFlag(gdal.Read), px, py, 1, 1, buffer, 1, 1, 0, 0)
 	if err != nil {
 		return cr.nodata, err
 	}
