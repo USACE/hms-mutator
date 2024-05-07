@@ -176,9 +176,9 @@ func (gf *GridFile) Bootstrap(knowledgeUncertaintySeed int64) error {
 		updatedList[i] = gf.Events[idx] //sample with replacement.
 	}
 	gf.Events = updatedList //replace dataset with bootstrap.
-	for _, e := range updatedList {
-		fmt.Println(e.Name)
-	}
+	//for _, e := range updatedList {
+	//	fmt.Println(e.Name)
+	//}
 	return nil
 }
 func (gf GridFile) SelectEvent(naturalVariabilitySeed int64) (PrecipGridEvent, TempGridEvent, error) {

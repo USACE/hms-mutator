@@ -34,10 +34,10 @@ func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64
 	nvrng := rand.New(rand.NewSource(eventSeed))
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
-	//kurng := rand.New(rand.NewSource(realizationSeed))
-	//bootstrapSeed := kurng.Int63()
+	kurng := rand.New(rand.NewSource(realizationSeed))
+	bootstrapSeed := kurng.Int63()
 	//bootstrap events
-	//s.gridFile.Bootstrap(bootstrapSeed)
+	s.gridFile.Bootstrap(bootstrapSeed)
 	//select event
 	ge, te, err := s.gridFile.SelectEvent(stormSeed)
 	if err != nil {
