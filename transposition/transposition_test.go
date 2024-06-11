@@ -71,11 +71,13 @@ func TestSimulationCompute(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	cpath := "/workspaces/hms-mutator/exampledata/Dec_2013.control"
-	cbytes, err := ioutil.ReadFile(cpath)
-	if err != nil {
-		t.Fail()
-	}
+	/*
+		cpath := "/workspaces/hms-mutator/exampledata/Dec_2013.control"
+		cbytes, err := ioutil.ReadFile(cpath)
+		if err != nil {
+			t.Fail()
+		}
+	*/
 	gpath := "/workspaces/hms-mutator/exampledata/WhiteRiver_Muncie.grid"
 	gbytes, err := ioutil.ReadFile(gpath)
 	if err != nil {
@@ -101,10 +103,10 @@ func TestSimulationCompute(t *testing.T) {
 	}
 	gridFile, err := hms.ReadGrid(gbytes)
 	metFile, err := hms.ReadMet(mbytes)
-	controlFile, err := hms.ReadControl(cbytes)
+	//controlFile, err := hms.ReadControl(cbytes)
 
 	//initialize simulation
-	sim, err := InitTranspositionSimulation(tbytes, wbytes, metFile, gridFile, controlFile)
+	sim, err := InitTranspositionSimulation(tbytes, wbytes, metFile, gridFile)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()

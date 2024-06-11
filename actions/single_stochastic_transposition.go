@@ -16,7 +16,6 @@ type SingleStochasticTransposition struct {
 	seedSet                  plugin.SeedSet
 	foundMCA                 bool
 	mcaFile                  hms.Mca
-	controlFile              hms.Control
 	transpositionDomainBytes []byte
 	watershedBytes           []byte
 }
@@ -27,7 +26,7 @@ type StochasticTranspositionResult struct {
 	StormName string
 }
 
-func InitSingleStochasticTransposition(pm *cc.PluginManager, gridFile hms.GridFile, metFile hms.Met, controlFile hms.Control, foundMCA bool, mcaFile hms.Mca, seedSet plugin.SeedSet, tbytes []byte, wbytes []byte) SingleStochasticTransposition {
+func InitSingleStochasticTransposition(pm *cc.PluginManager, gridFile hms.GridFile, metFile hms.Met, foundMCA bool, mcaFile hms.Mca, seedSet plugin.SeedSet, tbytes []byte, wbytes []byte) SingleStochasticTransposition {
 	return SingleStochasticTransposition{
 		pm:                       pm,
 		gridFile:                 gridFile,
@@ -35,7 +34,6 @@ func InitSingleStochasticTransposition(pm *cc.PluginManager, gridFile hms.GridFi
 		seedSet:                  seedSet,
 		foundMCA:                 foundMCA,
 		mcaFile:                  mcaFile,
-		controlFile:              controlFile,
 		transpositionDomainBytes: tbytes,
 		watershedBytes:           wbytes,
 	}
@@ -48,7 +46,7 @@ func (sst SingleStochasticTransposition) Compute() (StochasticTranspositionResul
 	var mca hms.Mca
 	var gfbytes []byte
 	var originalDssPath string
-	sim, err := transposition.InitTranspositionSimulation(sst.transpositionDomainBytes, sst.watershedBytes, sst.metFile, sst.gridFile, sst.controlFile)
+	sim, err := transposition.InitTranspositionSimulation(sst.transpositionDomainBytes, sst.watershedBytes, sst.metFile, sst.gridFile)
 	if err != nil {
 		sst.pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,

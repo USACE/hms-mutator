@@ -39,7 +39,7 @@ func TestReadManipulateWriteMetModel(t *testing.T) {
 	m, _ := ReadMet(bytes)
 	m.UpdateStormCenter("1", "2")
 	m.UpdateStormName("updated name")
-	m.UpdateTimeShift("45")
+	//m.UpdateTimeShift("45")
 	outbytes, _ := m.WriteBytes()
 	fmt.Println(string(outbytes))
 }

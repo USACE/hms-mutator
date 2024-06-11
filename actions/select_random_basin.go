@@ -31,9 +31,11 @@ func InitSelectBasinAction(action cc.Action, seedSet plugin.SeedSet, inputDs cc.
 }
 func (sba SelectBasinAction) Compute() error {
 	//get range of basin scenarios (ints between 0 and n?)
-	maxbasinid := sba.action.Parameters.GetIntOrFail("maxBasinid")
+	maxbasinid := sba.action.Parameters.GetIntOrFail("maxBasinId")
 	basinExtension := sba.action.Parameters.GetStringOrFail("basinExtension")
 	targetBasinFileName := sba.action.Parameters.GetStringOrFail("targetBasinFileName")
+	controlExtension := sba.action.Parameters.GetStringOrFail("controlExtension")
+	targetControlFileName := sba.action.Parameters.GetStringOrFail("targetControlFileName")
 	//generate a natural variabiilty seed generator
 	rng := rand.New(rand.NewSource(sba.seedSet.EventSeed))
 
@@ -45,15 +47,29 @@ func (sba SelectBasinAction) Compute() error {
 		return err
 	}
 	inDS := sba.inputDS
-	inDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", inDS.DataPaths[0], string(sampledBasinId), basinExtension)
+	inDSRoot := inDS.DataPaths[0]
+	inDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), basinExtension)
 	basinbytes, err := pm.GetFile(sba.inputDS, 0)
 	if err != nil {
 		return err
 	}
 	//upload the file to filesapi with the appropriate new name.
 	outDS := sba.outputDS
-	outDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", outDS.DataPaths[0], targetBasinFileName, basinExtension)
+	outDSRoot := outDS.DataPaths[0]
+	outDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetBasinFileName, basinExtension)
 	err = pm.PutFile(basinbytes, sba.outputDS, 0)
+	if err != nil {
+		return err
+	}
+
+	inDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), controlExtension)
+	controlbytes, err := pm.GetFile(sba.inputDS, 0)
+	if err != nil {
+		return err
+	}
+	//upload the file to filesapi with the appropriate new name.
+	outDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
+	err = pm.PutFile(controlbytes, sba.outputDS, 0)
 	if err != nil {
 		return err
 	}

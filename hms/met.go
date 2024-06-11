@@ -129,47 +129,50 @@ func (m *Met) UpdateStormName(stormName string) error {
 	}
 	return nil
 }
-func (m *Met) UpdateTimeShift(timeShift string) error {
-	foundTimeShift := false
-	foundTimeShiftMethod := false
-	for idx, l := range m.PrecipMethodParameters.lines {
-		if strings.Contains(l, TimeShiftKeyword) {
-			foundTimeShift = true
-			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift)
-		} else {
-			if strings.Contains(l, TimeShiftMethodKeyword) {
-				m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE")
-				foundTimeShiftMethod = true
+
+/*
+	func (m *Met) UpdateTimeShift(timeShift string) error {
+		foundTimeShift := false
+		foundTimeShiftMethod := false
+		for idx, l := range m.PrecipMethodParameters.lines {
+			if strings.Contains(l, TimeShiftKeyword) {
+				foundTimeShift = true
+				m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift)
+			} else {
+				if strings.Contains(l, TimeShiftMethodKeyword) {
+					m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE")
+					foundTimeShiftMethod = true
+				}
 			}
 		}
-	}
-	if !foundTimeShift {
-		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift))
-	}
-	if !foundTimeShiftMethod {
-		m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE"))
-	}
-	foundTimeShift = false
-	foundTimeShiftMethod = false
-	for idx, l := range m.tempmethod.lines {
-		if strings.Contains(l, TimeShiftKeyword) {
-			foundTimeShift = true
-			m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift)
-		} else {
-			if strings.Contains(l, TimeShiftMethodKeyword) {
-				m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE")
-				foundTimeShiftMethod = true
+		if !foundTimeShift {
+			m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift))
+		}
+		if !foundTimeShiftMethod {
+			m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE"))
+		}
+		foundTimeShift = false
+		foundTimeShiftMethod = false
+		for idx, l := range m.tempmethod.lines {
+			if strings.Contains(l, TimeShiftKeyword) {
+				foundTimeShift = true
+				m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift)
+			} else {
+				if strings.Contains(l, TimeShiftMethodKeyword) {
+					m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE")
+					foundTimeShiftMethod = true
+				}
 			}
 		}
+		if !foundTimeShift {
+			m.tempmethod.lines = append(m.tempmethod.lines, fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift))
+		}
+		if !foundTimeShiftMethod {
+			m.tempmethod.lines = append(m.tempmethod.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE"))
+		}
+		return nil
 	}
-	if !foundTimeShift {
-		m.tempmethod.lines = append(m.tempmethod.lines, fmt.Sprintf("%v%v", TimeShiftKeyword, timeShift))
-	}
-	if !foundTimeShiftMethod {
-		m.tempmethod.lines = append(m.tempmethod.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE"))
-	}
-	return nil
-}
+*/
 func (m Met) WriteBytes() ([]byte, error) {
 	//write a met model.
 	filestring := m.metString

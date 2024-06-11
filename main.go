@@ -52,14 +52,15 @@ func main() {
 		})
 		return
 	}
-	controlFileBytes, err := getInputBytes("HMS Model", ".control", payload, pm)
-	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
-		return
-	}
+	/*
+		controlFileBytes, err := getInputBytes("HMS Model", ".control", payload, pm)
+		if err != nil {
+			pm.LogError(cc.Error{
+				ErrorLevel: cc.FATAL,
+				Error:      err.Error(),
+			})
+			return
+		}*/
 	foundMCA := false
 	mcaFileBytes, err := getInputBytes("HMS Model", ".mca", payload, pm)
 	if err != nil {
@@ -104,7 +105,7 @@ func main() {
 	}
 	gridFile, err := hms.ReadGrid(gridFileBytes)
 	metFile, err := hms.ReadMet(metFileBytes)
-	controlFile, err := hms.ReadControl(controlFileBytes)
+	//controlFile, err := hms.ReadControl(controlFileBytes)
 	mcaFile := hms.Mca{}
 	if foundMCA {
 		mcaFile, err = hms.ReadMca(mcaFileBytes)
@@ -133,7 +134,7 @@ func main() {
 			srb.Compute()
 
 		case "single_stochastic_transposition":
-			sst := actions.InitSingleStochasticTransposition(pm, gridFile, metFile, controlFile, foundMCA, mcaFile, seedSet, transpositionDomainBytes, watershedDomainBytes)
+			sst := actions.InitSingleStochasticTransposition(pm, gridFile, metFile, foundMCA, mcaFile, seedSet, transpositionDomainBytes, watershedDomainBytes)
 
 			output, err := sst.Compute()
 			if err != nil {

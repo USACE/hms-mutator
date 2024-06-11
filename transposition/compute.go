@@ -11,15 +11,13 @@ type TranspositionSimulation struct {
 	transpositionModel Model
 	metModel           hms.Met
 	gridFile           hms.GridFile
-	control            hms.Control
 }
 
-func InitTranspositionSimulation(trgpkgRI []byte, wbgpkgRI []byte, metFile hms.Met, gridFile hms.GridFile, controlFile hms.Control) (TranspositionSimulation, error) {
+func InitTranspositionSimulation(trgpkgRI []byte, wbgpkgRI []byte, metFile hms.Met, gridFile hms.GridFile) (TranspositionSimulation, error) {
 	s := TranspositionSimulation{
 		transpositionModel: Model{},
 		metModel:           metFile,
 		gridFile:           gridFile,
-		control:            controlFile,
 	}
 	//initialize transposition region
 	t, err := InitModel(trgpkgRI, wbgpkgRI) //TODO fix this.
@@ -49,9 +47,8 @@ func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64
 	if err != nil {
 		return s.metModel, ge, te, err
 	}
-	//compute offset from control specification
-	offset := s.control.ComputeOffset(ge.StartTime)
-	fmt.Printf("%v,%f,%f,%v\n", ge.Name, x, y, offset)
+
+	fmt.Printf("%v,%f,%f\n", ge.Name, x, y)
 	//update met storm name
 	err = s.metModel.UpdateStormName(ge.Name)
 	if err != nil {
@@ -62,11 +59,7 @@ func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64
 	if err != nil {
 		return s.metModel, ge, te, err
 	}
-	//update timeshift
-	err = s.metModel.UpdateTimeShift(fmt.Sprintf("%v", offset))
-	if err != nil {
-		return s.metModel, ge, te, err
-	}
+
 	return s.metModel, ge, te, nil
 }
 func (s TranspositionSimulation) GetGridFileBytes(precipevent hms.PrecipGridEvent, tempevent hms.TempGridEvent) []byte {
