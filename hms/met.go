@@ -1,6 +1,7 @@
 package hms
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -68,10 +69,16 @@ func ReadMet(metResource []byte) (Met, error) {
 		}
 
 		if foundPrecipMethod {
-
+			foundNormalize := false
+			if strings.Contains(l, TimeShiftKeyword) {
+				foundNormalize = strings.Contains(l, "NORMALIZE")
+			}
 			if strings.Contains(l, PrecipEndKeyword) {
 				foundPrecipEnd = true
 				foundPrecipMethod = false
+				if !foundNormalize {
+					return metModel, errors.New(`Did not find Normalize as timeshift method.`)
+				}
 			}
 			if !foundPrecipEnd {
 				preciplines = append(preciplines, l)
