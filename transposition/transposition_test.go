@@ -1,14 +1,11 @@
 package transposition
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"testing"
 
-	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
 )
 
@@ -56,17 +53,17 @@ func TestSampleLocations(t *testing.T) {
 	}
 }
 func TestSimulationCompute(t *testing.T) {
-	path := "/workspaces/hms-mutator/exampledata/muncie_simple_transpostion_region.gpkg"
+	path := "/workspaces/hms-mutator/exampledata/TranspositionDomain.gpkg"
 	tbytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Fail()
 	}
-	wpath := "/workspaces/hms-mutator/exampledata/watershedBoundary_2.gpkg"
+	wpath := "/workspaces/hms-mutator/exampledata/WatershedBoundary.gpkg"
 	wbytes, err := ioutil.ReadFile(wpath)
 	if err != nil {
 		t.Fail()
 	}
-	mpath := "/workspaces/hms-mutator/exampledata/AORC.met"
+	mpath := "/workspaces/hms-mutator/exampledata/POR.met"
 	mbytes, err := ioutil.ReadFile(mpath)
 	if err != nil {
 		t.Fail()
@@ -78,29 +75,12 @@ func TestSimulationCompute(t *testing.T) {
 			t.Fail()
 		}
 	*/
-	gpath := "/workspaces/hms-mutator/exampledata/WhiteRiver_Muncie.grid"
+	gpath := "/workspaces/hms-mutator/exampledata/HMS.grid"
 	gbytes, err := ioutil.ReadFile(gpath)
 	if err != nil {
 		t.Fail()
 	}
-	epath := "/workspaces/hms-mutator/exampledata/eventconfiguration.json"
-	ec := plugin.EventConfiguration{}
-	ebytes, err := ioutil.ReadFile(epath)
-	if err != nil {
-		t.Fail()
-	}
-	ereader := bytes.NewReader(ebytes)
-	err = json.NewDecoder(ereader).Decode(&ec)
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
-	}
-	//obtain seed set
-	ss, ok := ec.Seeds["hms-mutator-muncie-alt"]
-	if !ok {
-		fmt.Println(err)
-		t.Fail()
-	}
+
 	gridFile, err := hms.ReadGrid(gbytes)
 	metFile, err := hms.ReadMet(mbytes)
 	//controlFile, err := hms.ReadControl(cbytes)
@@ -112,7 +92,7 @@ func TestSimulationCompute(t *testing.T) {
 		t.Fail()
 	} else {
 		//compute simulation for given seed set
-		m, ge, _, err := sim.Compute(ss.EventSeed, ss.RealizationSeed)
+		m, ge, _, err := sim.Compute(1234, 4321)
 		if err != nil {
 			fmt.Println(err)
 			t.Fail()

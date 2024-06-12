@@ -47,28 +47,28 @@ func (sba SelectBasinAction) Compute() error {
 		return err
 	}
 	inDS := sba.inputDS
-	inDSRoot := inDS.DataPaths[0]
-	inDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), basinExtension)
+	inDSRoot := inDS.Paths[0]
+	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), basinExtension)
 	basinbytes, err := pm.GetFile(sba.inputDS, 0)
 	if err != nil {
 		return err
 	}
 	//upload the file to filesapi with the appropriate new name.
 	outDS := sba.outputDS
-	outDSRoot := outDS.DataPaths[0]
-	outDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetBasinFileName, basinExtension)
+	outDSRoot := outDS.Paths[0]
+	outDS.Paths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetBasinFileName, basinExtension)
 	err = pm.PutFile(basinbytes, sba.outputDS, 0)
 	if err != nil {
 		return err
 	}
 
-	inDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), controlExtension)
+	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), controlExtension)
 	controlbytes, err := pm.GetFile(sba.inputDS, 0)
 	if err != nil {
 		return err
 	}
 	//upload the file to filesapi with the appropriate new name.
-	outDS.DataPaths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
+	outDS.Paths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
 	err = pm.PutFile(controlbytes, sba.outputDS, 0)
 	if err != nil {
 		return err
