@@ -198,7 +198,7 @@ func main() {
 				if err != nil {
 					pm.LogError(cc.Error{
 						ErrorLevel: cc.FATAL,
-						Error:      "could not put grid file",
+						Error:      "could not put MCA file",
 					})
 					return
 				}
@@ -295,6 +295,7 @@ func main() {
 		}
 	}
 	if err != nil {
+		fmt.Println(err.Error())
 		pm.LogError(cc.Error{
 			ErrorLevel: cc.FATAL,
 			Error:      "could not compute payload",
