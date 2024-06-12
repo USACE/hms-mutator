@@ -48,7 +48,7 @@ func (sba SelectBasinAction) Compute() error {
 	}
 	inDS := sba.inputDS
 	inDSRoot := inDS.Paths[0]
-	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), basinExtension)
+	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), basinExtension)
 	fmt.Println(inDS.Paths[0])
 	basinbytes, err := pm.GetFile(sba.inputDS, 0)
 	if err != nil {
@@ -64,7 +64,7 @@ func (sba SelectBasinAction) Compute() error {
 		return err
 	}
 
-	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, string(sampledBasinId), controlExtension)
+	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), controlExtension)
 	fmt.Println(inDS.Paths[0])
 	controlbytes, err := pm.GetFile(sba.inputDS, 0)
 	if err != nil {
