@@ -33,10 +33,10 @@ func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
 	if bootstrapCatalog {
-		//this currently leverages the catalog and bootstraps based on the size of the
-		//catalog to produce a catalog of equivalent size. Discussions of an Uber catalog
+		//this currently leverages the catalog and bootstraps based on the bootstrap catalog
+		//length to produce a catalog of bootstrap catalog length. Discussions of an Uber catalog
 		//where the catalog will be a superset of arbitrary size, where a subset of fixed
-		//size would be bootstrapped has been proposed.
+		//size would be bootstrapped can be completed if the bootstrap catalog length is smaller than the catalog itself.
 		kurng := rand.New(rand.NewSource(realizationSeed))
 		bootstrapSeed := kurng.Int63()
 		//bootstrap catalog
