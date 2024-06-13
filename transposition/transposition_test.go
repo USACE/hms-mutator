@@ -92,7 +92,7 @@ func TestSimulationCompute(t *testing.T) {
 		t.Fail()
 	} else {
 		//compute simulation for given seed set
-		m, ge, _, err := sim.Compute(1234, 4321, true)
+		m, ge, _, err := sim.Compute(1234, 4321, true, len(gridFile.Events))
 		if err != nil {
 			fmt.Println(err)
 			t.Fail()

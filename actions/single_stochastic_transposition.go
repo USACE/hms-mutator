@@ -38,7 +38,7 @@ func InitSingleStochasticTransposition(pm *cc.PluginManager, gridFile hms.GridFi
 		watershedBytes:           wbytes,
 	}
 }
-func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool) (StochasticTranspositionResult, error) {
+func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool, bootstrapCatalogLength int) (StochasticTranspositionResult, error) {
 	//initialize simulation
 	var ge hms.PrecipGridEvent
 	var te hms.TempGridEvent
@@ -55,7 +55,7 @@ func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool) (Stochas
 		return StochasticTranspositionResult{}, err
 	}
 	//compute simulation for given seed set
-	m, ge, te, err = sim.Compute(sst.seedSet.EventSeed, sst.seedSet.RealizationSeed, bootstrapCatalog)
+	m, ge, te, err = sim.Compute(sst.seedSet.EventSeed, sst.seedSet.RealizationSeed, bootstrapCatalog, bootstrapCatalogLength)
 	if err != nil {
 		sst.pm.LogError(cc.Error{
 			ErrorLevel: cc.ERROR,

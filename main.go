@@ -145,7 +145,15 @@ func main() {
 				})
 				return
 			}
-			output, err := sst.Compute(bootstrapCatalog)
+			bootstrapCatalogLength := a.Parameters.GetIntOrDefault("bootstrap_catalog_length", len(gridFile.Events))
+			if len(gridFile.Events) < bootstrapCatalogLength {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.FATAL,
+					Error:      "cannot allow bootstrap_catalog_length to be greater than the catalog length",
+				})
+				return
+			}
+			output, err := sst.Compute(bootstrapCatalog, bootstrapCatalogLength)
 			if err != nil {
 				pm.LogError(cc.Error{
 					ErrorLevel: cc.FATAL,

@@ -28,15 +28,19 @@ func InitTranspositionSimulation(trgpkgRI []byte, wbgpkgRI []byte, metFile hms.M
 	return s, nil
 
 }
-func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64, bootstrapCatalog bool) (hms.Met, hms.PrecipGridEvent, hms.TempGridEvent, error) {
+func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64, bootstrapCatalog bool, bootstrapCatalogLength int) (hms.Met, hms.PrecipGridEvent, hms.TempGridEvent, error) {
 	nvrng := rand.New(rand.NewSource(eventSeed))
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
 	if bootstrapCatalog {
+		//this currently leverages the catalog and bootstraps based on the size of the
+		//catalog to produce a catalog of equivalent size. Discussions of an Uber catalog
+		//where the catalog will be a superset of arbitrary size, where a subset of fixed
+		//size would be bootstrapped has been proposed.
 		kurng := rand.New(rand.NewSource(realizationSeed))
 		bootstrapSeed := kurng.Int63()
 		//bootstrap catalog
-		s.gridFile.Bootstrap(bootstrapSeed)
+		s.gridFile.Bootstrap(bootstrapSeed, bootstrapCatalogLength)
 	}
 
 	//select event

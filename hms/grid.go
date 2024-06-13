@@ -167,11 +167,11 @@ func ReadGrid(gridResource []byte) (GridFile, error) {
 	}
 	return GridFile{GridFileInfo: gridFileInfo, Events: precipgrids, Temps: tempgrids}, nil
 }
-func (gf *GridFile) Bootstrap(knowledgeUncertaintySeed int64) error {
+func (gf *GridFile) Bootstrap(knowledgeUncertaintySeed int64, resultingCatalogLength int) error {
 	length := len(gf.Events)
 	r := rand.New(rand.NewSource(knowledgeUncertaintySeed))
 	updatedList := make([]PrecipGridEvent, length)
-	for i := 0; i < length; i++ {
+	for i := 0; i < resultingCatalogLength; i++ {
 		idx := r.Int31n(int32(length))
 		updatedList[i] = gf.Events[idx] //sample with replacement.
 	}

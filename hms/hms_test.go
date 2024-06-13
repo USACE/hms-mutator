@@ -124,7 +124,7 @@ func TestReadBootstrapSelectUpdateWriteGrid(t *testing.T) {
 	}
 	g, _ := ReadGrid(bytes)
 	rnd := rand.New(rand.NewSource(1234))
-	g.Bootstrap(rnd.Int63())
+	g.Bootstrap(rnd.Int63(), len(g.Events))
 	for _, pge := range g.Events {
 		fmt.Printf("Event Name: %v \n", pge.Name)
 	}
