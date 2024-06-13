@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -135,8 +136,16 @@ func main() {
 
 		case "single_stochastic_transposition":
 			sst := actions.InitSingleStochasticTransposition(pm, gridFile, metFile, foundMCA, mcaFile, seedSet, transpositionDomainBytes, watershedDomainBytes)
-
-			output, err := sst.Compute()
+			bootstrapCatalogString := a.Parameters.GetStringOrDefault("bootstrap_catalog", "false")
+			bootstrapCatalog, err := strconv.ParseBool(bootstrapCatalogString)
+			if err != nil {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.FATAL,
+					Error:      "could not parse bootstrap_catalog parameter",
+				})
+				return
+			}
+			output, err := sst.Compute(bootstrapCatalog)
 			if err != nil {
 				pm.LogError(cc.Error{
 					ErrorLevel: cc.FATAL,

@@ -28,14 +28,17 @@ func InitTranspositionSimulation(trgpkgRI []byte, wbgpkgRI []byte, metFile hms.M
 	return s, nil
 
 }
-func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64) (hms.Met, hms.PrecipGridEvent, hms.TempGridEvent, error) {
+func (s *TranspositionSimulation) Compute(eventSeed int64, realizationSeed int64, bootstrapCatalog bool) (hms.Met, hms.PrecipGridEvent, hms.TempGridEvent, error) {
 	nvrng := rand.New(rand.NewSource(eventSeed))
 	stormSeed := nvrng.Int63()
 	transpositionSeed := nvrng.Int63()
-	//kurng := rand.New(rand.NewSource(realizationSeed))
-	//bootstrapSeed := kurng.Int63()
-	//bootstrap events
-	//s.gridFile.Bootstrap(bootstrapSeed)
+	if bootstrapCatalog {
+		kurng := rand.New(rand.NewSource(realizationSeed))
+		bootstrapSeed := kurng.Int63()
+		//bootstrap catalog
+		s.gridFile.Bootstrap(bootstrapSeed)
+	}
+
 	//select event
 	ge, te, err := s.gridFile.SelectEvent(stormSeed)
 	if err != nil {
