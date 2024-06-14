@@ -9,13 +9,16 @@ import (
 )
 
 func TestReadMetModel(t *testing.T) {
-	path := "/workspaces/hms-mutator/exampledata/AORC.met"
+	path := "/workspaces/hms-mutator/exampledata/SST.met"
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Fail()
 	}
-	m, _ := ReadMet(bytes)
+	m, err := ReadMet(bytes)
 	if !strings.Contains(m.lines[0], PrecipStartKeyword) {
+		t.Fail()
+	}
+	if err != nil {
 		t.Fail()
 	}
 }

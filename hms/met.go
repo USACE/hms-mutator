@@ -34,6 +34,7 @@ func ReadMet(metResource []byte) (Met, error) {
 	foundPrecipEnd := false
 	foundTempMethod := false
 	foundTempEnd := false
+	foundNormalize := false
 	metString := ""
 	metModel := Met{}
 	var precipMethod PrecipMethodParameters
@@ -69,8 +70,7 @@ func ReadMet(metResource []byte) (Met, error) {
 		}
 
 		if foundPrecipMethod {
-			foundNormalize := false
-			if strings.Contains(l, TimeShiftKeyword) {
+			if strings.Contains(l, TimeShiftMethodKeyword) {
 				foundNormalize = strings.Contains(l, "NORMALIZE")
 			}
 			if strings.Contains(l, PrecipEndKeyword) {
