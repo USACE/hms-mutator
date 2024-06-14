@@ -242,12 +242,12 @@ func (gf GridFile) ToBytes(precipEvent PrecipGridEvent, tempEvent TempGridEvent)
 		b = append(b, "\r\n"...)
 	}
 	if tempEvent.Name == "" {
-		gridName := precipEvent.Name
-		gridNameSansAORC := strings.Trim(gridName, "AORC ")
-		gridNameSansAORC = strings.ReplaceAll(gridNameSansAORC, " ", "_")
-		gridNameSansAORC = strings.ReplaceAll(gridNameSansAORC, "-", "")
-		tempMonkeyPatch := fmt.Sprintf("Grid: %v\n     Grid Type: Temperature\n     Last Modified Date: 9 August 2022\n     Last Modified Time: 17:14:25\n     Reference Height Units: Meters\n     Reference Height: 10.0\n     Data Source Type: External DSS\n     Variant: Variant-1\n       Last Variant Modified Date: 9 August 2022\n       Last Variant Modified Time: 17:14:25\n       Default Variant: Yes\n       DSS File Name: data/Storm.dss\n       DSS Pathname: /SHG2K/KANAWHA/TEMPERATURE///AORC/\n     End Variant: Variant-1\n     Use Lookup Table: No\nEnd:\n", gridName)
-		b = append(b, tempMonkeyPatch...)
+		//gridName := precipEvent.Name
+		//gridNameSansAORC := strings.Trim(gridName, "AORC ")
+		//gridNameSansAORC = strings.ReplaceAll(gridNameSansAORC, " ", "_")
+		//gridNameSansAORC = strings.ReplaceAll(gridNameSansAORC, "-", "")
+		//tempMonkeyPatch := fmt.Sprintf("Grid: %v\n     Grid Type: Temperature\n     Last Modified Date: 9 August 2022\n     Last Modified Time: 17:14:25\n     Reference Height Units: Meters\n     Reference Height: 10.0\n     Data Source Type: External DSS\n     Variant: Variant-1\n       Last Variant Modified Date: 9 August 2022\n       Last Variant Modified Time: 17:14:25\n       Default Variant: Yes\n       DSS File Name: data/Storm.dss\n       DSS Pathname: /SHG2K/KANAWHA/TEMPERATURE///AORC/\n     End Variant: Variant-1\n     Use Lookup Table: No\nEnd:\n", gridName)
+		//b = append(b, tempMonkeyPatch...)
 	} else {
 		for _, l := range tempEvent.Lines {
 			b = append(b, l...)
