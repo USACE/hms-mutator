@@ -129,11 +129,11 @@ func (m *Met) UpdateStormName(stormName string) error {
 			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", PrecipGridNameKeyword, stormName)
 		}
 	}
-	for idx, l := range m.tempmethod.lines {
+	/*for idx, l := range m.tempmethod.lines {
 		if strings.Contains(l, TempGridNameKeyword) {
 			m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TempGridNameKeyword, stormName)
 		}
-	}
+	}*/
 	return nil
 }
 
