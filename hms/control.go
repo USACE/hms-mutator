@@ -14,6 +14,7 @@ type Control struct {
 	Name      string
 	StartDate string
 	StartTime string
+	bytes     []byte
 }
 
 func ReadControl(controlRI []byte) (Control, error) {
@@ -31,14 +32,42 @@ func ReadControl(controlRI []byte) (Control, error) {
 		}
 		if strings.Contains(l, StartTimeKeyword) {
 			control.StartTime = strings.TrimLeft(l, StartTimeKeyword)
-			if control.StartTime == "24:00" {
-				control.StartTime = "23:59"
-			}
+
 		}
 	}
+	if control.StartTime == "24:00" {
+		fulltime := fmt.Sprint(control.StartDate, " 00:00")
+		csdt, err := time.Parse("02 January 2006 15:04", fulltime)
+		if err != nil {
+			fmt.Println(err)
+		}
+		csdt.Add(time.Hour * 24)
+		control.StartTime = csdt.Format("15:04") //fmt.Sprintf("%v:%v",csdt.Hour(),csdt.Minute())
+		control.StartDate = csdt.Format("02 January 2006")
+	}
+	control.bytes = controlRI
 	return control, nil
 }
-
+func (c Control) AddHoursToStart(timeWindowModifier int) {
+	fmt.Printf("adding %v hours to start\n", timeWindowModifier)
+	fmt.Println(c)
+	//parse control start date and time.
+	//DD FULLMONTHNAME YYYY
+	//HH:MM hours in 24 hour clock
+	fulltime := fmt.Sprint(c.StartDate, " ", c.StartTime)
+	csdt, err := time.Parse("02 January 2006 15:04", fulltime)
+	if err != nil {
+		fmt.Println(err)
+	}
+	hours, err := time.ParseDuration(fmt.Sprintf("%vh", timeWindowModifier))
+	if err != nil {
+		fmt.Println(err)
+	}
+	csdt.Add(hours)
+	c.StartTime = csdt.Format("15:04") //fmt.Sprintf("%v:%v",csdt.Hour(),csdt.Minute())
+	c.StartDate = csdt.Format("02 January 2006")
+	fmt.Println(c)
+}
 func (c Control) ComputeOffset(gridStartDateTime string) int {
 	//parse input as DDMMMYYYY:HHMM //24 hour clocktime
 	//	Jan 2 15:04:05 2006 MST - reference
@@ -58,6 +87,22 @@ func (c Control) ComputeOffset(gridStartDateTime string) int {
 	detailOffset := gsdt.Sub(csdt)
 	minOffset := detailOffset.Minutes()
 	return int(minOffset)
+}
+func (c Control) ToBytes() []byte {
+	controlstring := string(c.bytes)
+	inlines := strings.Split(controlstring, "\r\n") //maybe rn?
+	outlines := ""
+	for _, l := range inlines {
+		line := l
+		if strings.Contains(l, StartDateKeyword) {
+			line = fmt.Sprintf("%v%v", StartDateKeyword, c.StartDate)
+		}
+		if strings.Contains(l, StartTimeKeyword) {
+			line = fmt.Sprintf("%v%v", StartTimeKeyword, c.StartTime)
+		}
+		outlines = fmt.Sprint(outlines, line, "\r\n")
+	}
+	return []byte(outlines)
 }
 
 //find the start date and time and compare it to the start date and time of the grid. calculate an offset to input into the met file

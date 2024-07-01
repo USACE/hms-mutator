@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"time"
+
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
@@ -38,7 +40,7 @@ func InitSingleStochasticTransposition(pm *cc.PluginManager, gridFile hms.GridFi
 		watershedBytes:           wbytes,
 	}
 }
-func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool, bootstrapCatalogLength int) (StochasticTranspositionResult, error) {
+func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool, bootstrapCatalogLength int, normalize bool, controlStartTime time.Time, userSpecifiedOffset int) (StochasticTranspositionResult, error) {
 	//initialize simulation
 	var ge hms.PrecipGridEvent
 	var te hms.TempGridEvent
@@ -72,8 +74,16 @@ func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool, bootstra
 	ge.UpdateDSSFile("Storm")
 	te.UpdateDSSFile("Storm")
 	gfbytes = sim.GetGridFileBytes(ge, te)
-
+	geStartTime, err := time.Parse("02Jan2006:1504", ge.StartTime)
+	if err != nil {
+		sst.pm.LogError(cc.Error{
+			ErrorLevel: cc.ERROR,
+			Error:      err.Error(),
+		})
+		return StochasticTranspositionResult{}, err
+	}
 	//get met file bytes
+	m.UpdatePrecipTimeShift(normalize, controlStartTime, geStartTime, userSpecifiedOffset)
 	mbytes, err := m.WriteBytes()
 	if err != nil {
 		sst.pm.LogError(cc.Error{

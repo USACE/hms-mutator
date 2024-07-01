@@ -8,6 +8,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/usace/cc-go-sdk"
@@ -17,6 +18,8 @@ import (
 )
 
 var pluginName string = "hms-mutator"
+
+const WORKING_DIRECTORY string = "/data"
 
 func main() {
 
@@ -53,15 +56,6 @@ func main() {
 		})
 		return
 	}
-	/*
-		controlFileBytes, err := getInputBytes("HMS Model", ".control", payload, pm)
-		if err != nil {
-			pm.LogError(cc.Error{
-				ErrorLevel: cc.FATAL,
-				Error:      err.Error(),
-			})
-			return
-		}*/
 	foundMCA := false
 	mcaFileBytes, err := getInputBytes("HMS Model", ".mca", payload, pm)
 	if err != nil {
@@ -111,7 +105,7 @@ func main() {
 	if foundMCA {
 		mcaFile, err = hms.ReadMca(mcaFileBytes)
 	}
-
+	controlStartTime := time.Now()
 	for _, a := range payload.Actions {
 		switch a.Name {
 		case "select_random_basin":
@@ -132,7 +126,10 @@ func main() {
 				return
 			}
 			srb := actions.InitSelectBasinAction(a, seedSet, basinDS, outBasinDS)
-			srb.Compute()
+			controlStartTime, err = srb.Compute()
+			if err != nil {
+				return
+			}
 
 		case "single_stochastic_transposition":
 			sst := actions.InitSingleStochasticTransposition(pm, gridFile, metFile, foundMCA, mcaFile, seedSet, transpositionDomainBytes, watershedDomainBytes)
@@ -153,7 +150,17 @@ func main() {
 				})
 				return
 			}
-			output, err := sst.Compute(bootstrapCatalog, bootstrapCatalogLength)
+			normalizeTimeShiftString := a.Parameters.GetStringOrDefault("normalize", "true")
+			normalizeTimeShift, err := strconv.ParseBool(normalizeTimeShiftString)
+			userSpecifiedOffset := a.Parameters.GetIntOrDefault("start_time_offset", 0)
+			if err != nil {
+				pm.LogError(cc.Error{
+					ErrorLevel: cc.FATAL,
+					Error:      "could not parse normalize parameter",
+				})
+				return
+			}
+			output, err := sst.Compute(bootstrapCatalog, bootstrapCatalogLength, normalizeTimeShift, controlStartTime, userSpecifiedOffset)
 			if err != nil {
 				pm.LogError(cc.Error{
 					ErrorLevel: cc.FATAL,

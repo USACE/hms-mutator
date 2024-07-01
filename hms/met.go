@@ -3,7 +3,9 @@ package hms
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
+	"time"
 )
 
 var PrecipStartKeyword string = "Precip Method Parameters:"
@@ -134,6 +136,72 @@ func (m *Met) UpdateStormName(stormName string) error {
 			m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TempGridNameKeyword, stormName)
 		}
 	}*/
+	return nil
+}
+func (m *Met) UpdatePrecipTimeShift(normalize bool, controlStartTime time.Time, gridStartTime time.Time, userSpecifiedAdditionalTime int) error {
+	foundTimeShift := false
+	foundTimeShiftMethod := false
+	timeShiftFloat := math.Round(-controlStartTime.Sub(gridStartTime).Minutes()) //verify this works. if the grid start time is before the control the value will be negative the minus sign makes it positive to reflect hms convention.
+	timeShiftInt := int(timeShiftFloat) + userSpecifiedAdditionalTime            //negative is forward in time.
+	for idx, l := range m.PrecipMethodParameters.lines {
+		if strings.Contains(l, TimeShiftKeyword) {
+			foundTimeShift = true
+			m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftKeyword, timeShiftInt)
+		} else {
+			if strings.Contains(l, TimeShiftMethodKeyword) {
+				if normalize {
+					m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE")
+				} else {
+					m.PrecipMethodParameters.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "SPECIFIED")
+				}
+				foundTimeShiftMethod = true
+			}
+		}
+	}
+	if !foundTimeShift {
+		if !normalize {
+			m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftKeyword, timeShiftInt))
+		}
+
+	}
+	if !foundTimeShiftMethod {
+		if normalize {
+			m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE"))
+		} else {
+			m.PrecipMethodParameters.lines = append(m.PrecipMethodParameters.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "SPECIFIED"))
+		}
+
+	}
+	return nil
+}
+func (m *Met) UpdateTempTimeShift(normalize bool, controlStartTime time.Time, gridStartTime time.Time, userSpecifiedAdditionalTime int) error {
+	foundTimeShift := false
+	foundTimeShiftMethod := false
+	timeShiftFloat := math.Round(-controlStartTime.Sub(gridStartTime).Minutes())
+	timeShiftInt := int(timeShiftFloat) + userSpecifiedAdditionalTime //negative is forward in time.
+	for idx, l := range m.tempmethod.lines {
+		if strings.Contains(l, TimeShiftKeyword) {
+			foundTimeShift = true
+			m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TimeShiftKeyword, timeShiftInt)
+		} else {
+			if strings.Contains(l, TimeShiftMethodKeyword) {
+				m.tempmethod.lines[idx] = fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE")
+				foundTimeShiftMethod = true
+			}
+		}
+	}
+	if !foundTimeShift {
+		if !normalize {
+			m.tempmethod.lines = append(m.tempmethod.lines, fmt.Sprintf("%v%v", TimeShiftKeyword, timeShiftInt))
+		}
+
+	}
+	if !foundTimeShiftMethod {
+		if normalize {
+			m.tempmethod.lines = append(m.tempmethod.lines, fmt.Sprintf("%v%v", TimeShiftMethodKeyword, "NORMALIZE"))
+		}
+
+	}
 	return nil
 }
 

@@ -3,9 +3,12 @@ package actions
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
+	"time"
 
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/cc-go-sdk/plugin"
+	"github.com/usace/hms-mutator/hms"
 )
 
 //the objective of this action is to randomize the basin utilized in an HMS compute
@@ -29,13 +32,20 @@ func InitSelectBasinAction(action cc.Action, seedSet plugin.SeedSet, inputDs cc.
 	}
 	return &sba
 }
-func (sba SelectBasinAction) Compute() error {
+func (sba SelectBasinAction) Compute() (time.Time, error) {
 	//get range of basin scenarios (ints between 0 and n?)
 	maxbasinid := sba.action.Parameters.GetIntOrFail("maxBasinId")
 	basinExtension := sba.action.Parameters.GetStringOrFail("basinExtension")
 	targetBasinFileName := sba.action.Parameters.GetStringOrFail("targetBasinFileName")
 	controlExtension := sba.action.Parameters.GetStringOrFail("controlExtension")
 	targetControlFileName := sba.action.Parameters.GetStringOrFail("targetControlFileName")
+	//allowing user specified start date to accommodate the inclusion of a setback period.
+	updateStartDateAndTime, err := strconv.ParseBool(sba.action.Parameters.GetStringOrFail("updateStartDateAndTime"))
+	if err != nil {
+		return time.Now(), err
+	}
+	hoursOffset := sba.action.Parameters.GetIntOrDefault("startDateAndTimeOffset", 0)
+
 	//generate a natural variabiilty seed generator
 	rng := rand.New(rand.NewSource(sba.seedSet.EventSeed))
 
@@ -44,7 +54,7 @@ func (sba SelectBasinAction) Compute() error {
 	//download the file from filesapi
 	pm, err := cc.InitPluginManager()
 	if err != nil {
-		return err
+		return time.Now(), err
 	}
 	inDS := sba.inputDS
 	inDSRoot := inDS.Paths[0]
@@ -52,7 +62,7 @@ func (sba SelectBasinAction) Compute() error {
 	fmt.Println(inDS.Paths[0])
 	basinbytes, err := pm.GetFile(sba.inputDS, 0)
 	if err != nil {
-		return err
+		return time.Now(), err
 	}
 	//upload the file to filesapi with the appropriate new name.
 	outDS := sba.outputDS
@@ -61,21 +71,30 @@ func (sba SelectBasinAction) Compute() error {
 	fmt.Println(outDS.Paths[0])
 	err = pm.PutFile(basinbytes, sba.outputDS, 0)
 	if err != nil {
-		return err
+		return time.Now(), err
 	}
 
 	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), controlExtension)
 	fmt.Println(inDS.Paths[0])
 	controlbytes, err := pm.GetFile(sba.inputDS, 0)
 	if err != nil {
-		return err
+		return time.Now(), err
 	}
+	if updateStartDateAndTime {
+		control, err := hms.ReadControl(controlbytes)
+		if err != nil {
+			return time.Now(), err
+		}
+		control.AddHoursToStart(hoursOffset)
+		controlbytes = control.ToBytes()
+	}
+
 	//upload the file to filesapi with the appropriate new name.
 	outDS.Paths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
 	fmt.Println(outDS.Paths[0])
 	err = pm.PutFile(controlbytes, sba.outputDS, 0)
 	if err != nil {
-		return err
+		return time.Now(), err
 	}
-	return nil
+	return time.Now(), err
 }
