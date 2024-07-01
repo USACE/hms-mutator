@@ -3,9 +3,11 @@ package hms
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestReadMetModel(t *testing.T) {
@@ -135,4 +137,14 @@ func TestReadBootstrapSelectUpdateWriteGrid(t *testing.T) {
 	_ = e.UpdateDSSFile("Storm")
 	s := string(g.ToBytes(e, temp))
 	fmt.Println(s)
+}
+func TestTimeSubstitution(t *testing.T) {
+	control := time.Date(2017, 9, 17, 1, 0, 0, 0, time.UTC)
+	fmt.Println(control)
+	grid := time.Date(1981, 2, 16, 0, 0, 0, 0, time.UTC)
+	fmt.Println(grid)
+	duration := -control.Sub(grid).Minutes()
+	fmt.Println(duration)
+	rounded := math.Round(duration)
+	fmt.Println(rounded)
 }

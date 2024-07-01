@@ -80,12 +80,13 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	if err != nil {
 		return time.Now(), err
 	}
+	controltime := time.Now()
 	if updateStartDateAndTime {
 		control, err := hms.ReadControl(controlbytes)
 		if err != nil {
 			return time.Now(), err
 		}
-		control.AddHoursToStart(hoursOffset)
+		controltime = control.AddHoursToStart(hoursOffset)
 		controlbytes = control.ToBytes()
 	}
 
@@ -96,5 +97,5 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	if err != nil {
 		return time.Now(), err
 	}
-	return time.Now(), err
+	return controltime, nil
 }

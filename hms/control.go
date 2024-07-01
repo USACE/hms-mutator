@@ -48,7 +48,7 @@ func ReadControl(controlRI []byte) (Control, error) {
 	control.bytes = controlRI
 	return control, nil
 }
-func (c *Control) AddHoursToStart(timeWindowModifier int) {
+func (c *Control) AddHoursToStart(timeWindowModifier int) time.Time {
 	fmt.Printf("adding %v hours to start\n", timeWindowModifier)
 	fmt.Println(c)
 	//parse control start date and time.
@@ -67,6 +67,7 @@ func (c *Control) AddHoursToStart(timeWindowModifier int) {
 	c.StartTime = csdt.Format("15:04") //fmt.Sprintf("%v:%v",csdt.Hour(),csdt.Minute())
 	c.StartDate = csdt.Format("02 January 2006")
 	fmt.Println(c)
+	return csdt
 }
 func (c Control) ComputeOffset(gridStartDateTime string) int {
 	//parse input as DDMMMYYYY:HHMM //24 hour clocktime
