@@ -41,14 +41,14 @@ func ReadControl(controlRI []byte) (Control, error) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		csdt.Add(time.Hour * 24)
+		csdt = csdt.Add(time.Hour * 24)
 		control.StartTime = csdt.Format("15:04") //fmt.Sprintf("%v:%v",csdt.Hour(),csdt.Minute())
 		control.StartDate = csdt.Format("02 January 2006")
 	}
 	control.bytes = controlRI
 	return control, nil
 }
-func (c Control) AddHoursToStart(timeWindowModifier int) {
+func (c *Control) AddHoursToStart(timeWindowModifier int) {
 	fmt.Printf("adding %v hours to start\n", timeWindowModifier)
 	fmt.Println(c)
 	//parse control start date and time.
@@ -63,7 +63,7 @@ func (c Control) AddHoursToStart(timeWindowModifier int) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	csdt.Add(hours)
+	csdt = csdt.Add(hours)
 	c.StartTime = csdt.Format("15:04") //fmt.Sprintf("%v:%v",csdt.Hour(),csdt.Minute())
 	c.StartDate = csdt.Format("02 January 2006")
 	fmt.Println(c)
