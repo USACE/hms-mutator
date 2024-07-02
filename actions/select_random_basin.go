@@ -86,7 +86,10 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 		if err != nil {
 			return time.Now(), err
 		}
-		controltime = control.AddHoursToStart(hoursOffset)
+		controltime, err = control.AddHoursToStart(hoursOffset)
+		if err != nil {
+			return time.Now(), err
+		}
 		controlbytes = control.ToBytes()
 	}
 

@@ -37,37 +37,40 @@ func ReadControl(controlRI []byte) (Control, error) {
 	}
 	if control.StartTime == "24:00" {
 		fulltime := fmt.Sprint(control.StartDate, " 00:00")
-		csdt, err := time.Parse("02 January 2006 15:04", fulltime)
+		csdt, err := time.Parse("2 January 2006 15:04", fulltime)
 		if err != nil {
 			fmt.Println(err)
+			return Control{}, err
 		}
 		csdt = csdt.Add(time.Hour * 24)
 		control.StartTime = csdt.Format("15:04") //fmt.Sprintf("%v:%v",csdt.Hour(),csdt.Minute())
-		control.StartDate = csdt.Format("02 January 2006")
+		control.StartDate = csdt.Format("2 January 2006")
 	}
 	control.bytes = controlRI
 	return control, nil
 }
-func (c *Control) AddHoursToStart(timeWindowModifier int) time.Time {
+func (c *Control) AddHoursToStart(timeWindowModifier int) (time.Time, error) {
 	fmt.Printf("adding %v hours to start\n", timeWindowModifier)
-	fmt.Println(c)
+	//fmt.Println(c)
 	//parse control start date and time.
 	//DD FULLMONTHNAME YYYY
 	//HH:MM hours in 24 hour clock
 	fulltime := fmt.Sprint(c.StartDate, " ", c.StartTime)
-	csdt, err := time.Parse("02 January 2006 15:04", fulltime)
+	csdt, err := time.Parse("2 January 2006 15:04", fulltime)
 	if err != nil {
 		fmt.Println(err)
+		return time.Now(), err
 	}
 	hours, err := time.ParseDuration(fmt.Sprintf("%vh", timeWindowModifier))
 	if err != nil {
 		fmt.Println(err)
+		return time.Now(), err
 	}
 	csdt = csdt.Add(hours)
 	c.StartTime = csdt.Format("15:04") //fmt.Sprintf("%v:%v",csdt.Hour(),csdt.Minute())
-	c.StartDate = csdt.Format("02 January 2006")
-	fmt.Println(c)
-	return csdt
+	c.StartDate = csdt.Format("2 January 2006")
+	//fmt.Println(c)
+	return csdt, nil
 }
 func (c Control) ComputeOffset(gridStartDateTime string) int {
 	//parse input as DDMMMYYYY:HHMM //24 hour clocktime
@@ -80,7 +83,7 @@ func (c Control) ComputeOffset(gridStartDateTime string) int {
 	//DD FULLMONTHNAME YYYY
 	//HH:MM hours in 24 hour clock
 	fulltime := fmt.Sprint(c.StartDate, " ", c.StartTime)
-	csdt, err := time.Parse("02 January 2006 15:04", fulltime)
+	csdt, err := time.Parse("2 January 2006 15:04", fulltime)
 	if err != nil {
 		fmt.Println(err)
 	}
