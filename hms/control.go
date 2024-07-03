@@ -49,6 +49,10 @@ func ReadControl(controlRI []byte) (Control, error) {
 	control.bytes = controlRI
 	return control, nil
 }
+func (c *Control) StartDateAndTime() (time.Time, error) {
+	fulltime := fmt.Sprint(c.StartDate, " ", c.StartTime)
+	return time.Parse("2 January 2006 15:04", fulltime)
+}
 func (c *Control) AddHoursToStart(timeWindowModifier int) (time.Time, error) {
 	fmt.Printf("adding %v hours to start\n", timeWindowModifier)
 	//fmt.Println(c)

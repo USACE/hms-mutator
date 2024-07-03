@@ -50,7 +50,7 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	rng := rand.New(rand.NewSource(sba.seedSet.EventSeed))
 
 	//sample an int in the range of basin scenarios
-	sampledBasinId := rng.Int31n(int32(maxbasinid) + 1) //0 to exclusive upper bound
+	sampledBasinId := rng.Int31n(int32(maxbasinid)) //0 to exclusive upper bound
 	//download the file from filesapi
 	pm, err := cc.InitPluginManager()
 	if err != nil {
@@ -80,12 +80,15 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	if err != nil {
 		return time.Now(), err
 	}
-	controltime := time.Now()
+	control, err := hms.ReadControl(controlbytes)
+	if err != nil {
+		return time.Now(), err
+	}
+	controltime, err := control.StartDateAndTime()
+	if err != nil {
+		return controltime, err
+	}
 	if updateStartDateAndTime {
-		control, err := hms.ReadControl(controlbytes)
-		if err != nil {
-			return time.Now(), err
-		}
 		controltime, err = control.AddHoursToStart(hoursOffset)
 		if err != nil {
 			return time.Now(), err
