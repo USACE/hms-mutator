@@ -30,72 +30,49 @@ func main() {
 		return
 	}
 	// get the payload.
-	payload := pm.GetPayload()
+	payload := pm.Payload
 	//validate the payload
 	err = validatePayload(payload)
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
+		pm.Logger.Error(err.Error())
 	}
 	//download all required files as bytes
 	gridFileBytes, err := getInputBytes("HMS Model", ".grid", payload, pm)
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
+		pm.Logger.Error(err.Error())
 		return
 	}
 	metFileBytes, err := getInputBytes("HMS Model", ".met", payload, pm)
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
+		pm.Logger.Error(err.Error())
 		return
 	}
 	foundMCA := false
 	mcaFileBytes, err := getInputBytes("HMS Model", ".mca", payload, pm)
 	if err != nil {
 		err = nil
-		pm.LogMessage(cc.Message{
-			Message: "no *.mca file detected, variability is only reflected in storm selection and storm positioning in space and time.",
-		})
+		pm.Logger.Info("no *.mca file detected, variability is only reflected in storm selection and storm positioning in space and time.")
 	} else {
 		foundMCA = true
 	}
 	seedFileBytes, err := getInputBytes("seeds", "", payload, pm)
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
+		pm.Logger.Error(err.Error())
 		return
 	}
 	seedSet, err := readSeedFile(seedFileBytes)
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
+		pm.Logger.Error(err.Error())
 		return
 	}
 	transpositionDomainBytes, err := getInputBytes("TranspositionRegion", "", payload, pm)
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
+		pm.Logger.Error(err.Error())
 		return
 	}
 	watershedDomainBytes, err := getInputBytes("WatershedBoundary", "", payload, pm)
 	if err != nil {
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      err.Error(),
-		})
+		pm.Logger.Error(err.Error())
 		return
 	}
 	gridFile, err := hms.ReadGrid(gridFileBytes)
@@ -107,22 +84,16 @@ func main() {
 	}
 	controlStartTime := time.Now()
 	for _, a := range payload.Actions {
-		switch a.Name {
+		switch a.Type {
 		case "select_random_basin":
 			basinDS, err := pm.GetInputDataSource("Input_Basin_Directory")
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      err.Error(),
-				})
+				pm.Logger.Error(err.Error())
 				return
 			}
 			outBasinDS, err := pm.GetOutputDataSource("Output_Basin_Directory")
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      err.Error(),
-				})
+				pm.Logger.Error(err.Error())
 				return
 			}
 			srb := actions.InitSelectBasinAction(a, seedSet, basinDS, outBasinDS)
@@ -133,47 +104,32 @@ func main() {
 
 		case "single_stochastic_transposition":
 			sst := actions.InitSingleStochasticTransposition(pm, gridFile, metFile, foundMCA, mcaFile, seedSet, transpositionDomainBytes, watershedDomainBytes)
-			bootstrapCatalogString := a.Parameters.GetStringOrDefault("bootstrap_catalog", "false")
+			bootstrapCatalogString := a.Attributes.GetStringOrDefault("bootstrap_catalog", "false")
 			bootstrapCatalog, err := strconv.ParseBool(bootstrapCatalogString)
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not parse bootstrap_catalog parameter",
-				})
+				pm.Logger.Error("could not parse bootstrap_catalog parameter")
 				return
 			}
-			bootstrapCatalogLength := a.Parameters.GetIntOrDefault("bootstrap_catalog_length", len(gridFile.Events))
+			bootstrapCatalogLength := a.Attributes.GetIntOrDefault("bootstrap_catalog_length", len(gridFile.Events))
 			if len(gridFile.Events) < bootstrapCatalogLength {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "cannot allow bootstrap_catalog_length to be greater than the catalog length",
-				})
+				pm.Logger.Error("cannot allow bootstrap_catalog_length to be greater than the catalog length")
 				return
 			}
-			normalizeTimeShiftString := a.Parameters.GetStringOrDefault("normalize", "true")
+			normalizeTimeShiftString := a.Attributes.GetStringOrDefault("normalize", "true")
 			normalizeTimeShift, err := strconv.ParseBool(normalizeTimeShiftString)
-			userSpecifiedOffset := a.Parameters.GetIntOrDefault("start_time_offset", 0)
+			userSpecifiedOffset := a.Attributes.GetIntOrDefault("start_time_offset", 0)
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not parse normalize parameter",
-				})
+				pm.Logger.Error("could not parse normalize parameter")
 				return
 			}
 			output, err := sst.Compute(bootstrapCatalog, bootstrapCatalogLength, normalizeTimeShift, controlStartTime, userSpecifiedOffset)
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not compute payload",
-				})
+				pm.Logger.Error("could not compute payload")
 				return
 			}
 			dssGridCacheDataSource, err := pm.GetInputDataSource("DSS Grid Cache")
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not find DSS Grid Cache datasource",
-				})
+				pm.Logger.Error("could not find DSS Grid Cache datasource")
 				return
 			}
 			root := dssGridCacheDataSource.Paths[0]
@@ -187,80 +143,53 @@ func main() {
 			}
 			dssBytes, err := pm.GetFile(stormDataSource, 0)
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not find storm",
-				})
+				pm.Logger.Error("could not find storm")
 				return
 			}
 			err = putOutputBytes(dssBytes, "Storm DSS File", payload, pm)
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not put storm",
-				})
+				pm.Logger.Error("could not put storm")
 				return
 			}
 			err = putOutputBytes(output.GridBytes, "Grid File", payload, pm)
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not put grid file",
-				})
+				pm.Logger.Error("could not put grid file")
 				return
 			}
 			err = putOutputBytes(output.MetBytes, "Met File", payload, pm)
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not put grid file",
-				})
+				pm.Logger.Error("could not put grid file")
 				return
 			}
 			if foundMCA {
 				err = putOutputBytes(output.McaBytes, "MCA File", payload, pm)
 				if err != nil {
-					pm.LogError(cc.Error{
-						ErrorLevel: cc.FATAL,
-						Error:      "could not put MCA file",
-					})
+					pm.Logger.Error("could not put MCA file")
 					return
 				}
 			}
 		case "stratified_locations":
 			sla, err := actions.InitStratifiedCompute(a, gridFile, transpositionDomainBytes, watershedDomainBytes, payload.Outputs[0])
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not initalize stratified locations for this payload",
-				})
+				pm.Logger.Error("could not initalize stratified locations for this payload")
 				return
 			}
 			output, err := sla.Compute()
 			//put the output
 
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not compute stratified locations for this payload",
-				})
+				pm.Logger.Error("could not compute stratified locations for this payload")
 				return
 			}
 			locations, err := pm.GetOutputDataSource("Locations")
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not put stratified locations for this payload",
-				})
+				pm.Logger.Error("could not put stratified locations for this payload")
 				return
 			}
 			pm.PutFile(output.CandiateLocations.ToBytes(), locations, 0)
 			gridFileOutput, err := pm.GetOutputDataSource("GridFile")
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not put gridfiles for this payload",
-				})
+				pm.Logger.Error("could not put gridfiles for this payload")
 				return
 			}
 			root := path.Dir(gridFileOutput.Paths[0])
@@ -271,27 +200,18 @@ func main() {
 		case "valid_stratified_locations":
 			sla, err := actions.InitStratifiedCompute(a, gridFile, transpositionDomainBytes, watershedDomainBytes, payload.Outputs[0])
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not initalize valid stratified locations for this payload",
-				})
+				pm.Logger.Error("could not initalize valid stratified locations for this payload")
 				return
 			}
 			inputSource, err := pm.GetInputDataSource("Cumulative Grids")
 			output, err := sla.DetermineValidLocations(inputSource) //update to be based on output location?
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not compute valid stratified locations for this payload",
-				})
+				pm.Logger.Error("could not compute valid stratified locations for this payload")
 				return
 			}
 			outputDataSource, err := pm.GetOutputDataSource("ValidLocations")
 			if err != nil {
-				pm.LogError(cc.Error{
-					ErrorLevel: cc.FATAL,
-					Error:      "could not put valid stratified locations for this payload",
-				})
+				pm.Logger.Error("could not put valid stratified locations for this payload")
 				return
 			}
 			root := path.Dir(outputDataSource.DataPaths[0])
@@ -320,16 +240,10 @@ func main() {
 	}
 	if err != nil {
 		fmt.Println(err.Error())
-		pm.LogError(cc.Error{
-			ErrorLevel: cc.FATAL,
-			Error:      "could not compute payload",
-		})
+		pm.Logger.Error("could not compute payload")
 		return
 	} else {
-		pm.ReportProgress(cc.StatusReport{
-			Status:   "complete",
-			Progress: 100,
-		})
+		pm.Logger.Info("complete 100 percent")
 	}
 }
 func validatePayload(payload cc.Payload) error {
@@ -352,8 +266,9 @@ func getInputBytes(keyword string, extension string, payload cc.Payload, pm *cc.
 			has := false
 			if extension != "" {
 				for i, Path := range input.Paths {
+					index, _ := strconv.Atoi(i)
 					if strings.Contains(Path, extension) {
-						index = i
+						index = index
 						has = true
 					}
 				}

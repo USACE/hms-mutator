@@ -50,19 +50,13 @@ func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool, bootstra
 	var originalDssPath string
 	sim, err := transposition.InitTranspositionSimulation(sst.transpositionDomainBytes, sst.watershedBytes, sst.metFile, sst.gridFile)
 	if err != nil {
-		sst.pm.LogError(cc.Error{
-			ErrorLevel: cc.ERROR,
-			Error:      err.Error(),
-		})
+		sst.pm.Logger.Error(err.Error())
 		return StochasticTranspositionResult{}, err
 	}
 	//compute simulation for given seed set
 	m, ge, te, err = sim.Compute(sst.seedSet.EventSeed, sst.seedSet.RealizationSeed, bootstrapCatalog, bootstrapCatalogLength)
 	if err != nil {
-		sst.pm.LogError(cc.Error{
-			ErrorLevel: cc.ERROR,
-			Error:      err.Error(),
-		})
+		sst.pm.Logger.Error(err.Error())
 		return StochasticTranspositionResult{}, err
 	}
 	//update mca file if present
@@ -76,20 +70,14 @@ func (sst SingleStochasticTransposition) Compute(bootstrapCatalog bool, bootstra
 	gfbytes = sim.GetGridFileBytes(ge, te)
 	geStartTime, err := time.Parse("02Jan2006:1504", ge.StartTime)
 	if err != nil {
-		sst.pm.LogError(cc.Error{
-			ErrorLevel: cc.ERROR,
-			Error:      err.Error(),
-		})
+		sst.pm.Logger.Error(err.Error())
 		return StochasticTranspositionResult{}, err
 	}
 	//get met file bytes
 	m.UpdatePrecipTimeShift(normalize, controlStartTime, geStartTime, userSpecifiedOffset)
 	mbytes, err := m.WriteBytes()
 	if err != nil {
-		sst.pm.LogError(cc.Error{
-			ErrorLevel: cc.ERROR,
-			Error:      err.Error(),
-		})
+		sst.pm.Logger.Error(err.Error())
 		return StochasticTranspositionResult{}, err
 	}
 	mcaBytes := make([]byte, 0)

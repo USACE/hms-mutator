@@ -1,0 +1,4 @@
+FROM cc-tiledb
+
+RUN apt update &&\
+	apt -y install gdal-bin gdal-data libgdal-dev
