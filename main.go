@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/cc-go-sdk/plugin"
