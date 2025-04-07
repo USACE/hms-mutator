@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/cc-go-sdk/plugin"
@@ -133,13 +132,12 @@ func main() {
 				pm.Logger.Error("could not find DSS Grid Cache datasource")
 				return
 			}
-			root := dssGridCacheDataSource.Paths[0]
+			root := dssGridCacheDataSource.Paths["default"]
 			stormName := strings.Replace(output.StormName, "\\", "/", -1)
 			stormDataSource := cc.DataSource{
 				Name:      "DssFile",
 				ID:        &uuid.NameSpaceDNS,
-				Paths:     []string{fmt.Sprintf("%v%v", root, stormName)},
-				DataPaths: []string{},
+				Paths:     map[string]string{"default": fmt.Sprintf("%v%v", root, stormName)},
 				StoreName: dssGridCacheDataSource.StoreName,
 			}
 			dssBytes, err := pm.GetFile(stormDataSource, 0)
@@ -193,9 +191,9 @@ func main() {
 				pm.Logger.Error("could not put gridfiles for this payload")
 				return
 			}
-			root := path.Dir(gridFileOutput.Paths[0])
+			root := path.Dir(gridFileOutput.Paths["default"])
 			for k, v := range output.GridFiles {
-				gridFileOutput.Paths[0] = fmt.Sprintf("%v/%v.grid", root, k)
+				gridFileOutput.Paths["default"] = fmt.Sprintf("%v/%v.grid", root, k)
 				pm.PutFile(v, gridFileOutput, 0)
 			}
 		case "valid_stratified_locations":
@@ -215,12 +213,12 @@ func main() {
 				pm.Logger.Error("could not put valid stratified locations for this payload")
 				return
 			}
-			root := path.Dir(outputDataSource.DataPaths[0])
+			root := path.Dir(outputDataSource.DataPaths["default"])
 			for k, v := range output.StormMap {
-				outputDataSource.Paths[0] = fmt.Sprintf("%v/%v.csv", root, k)
+				outputDataSource.Paths["default"] = fmt.Sprintf("%v/%v.csv", root, k)
 				pm.PutFile(v.ToBytes(), outputDataSource, 0)
 			}
-			outputDataSource.Paths[0] = fmt.Sprintf("%v/%v.csv", root, "AllStormsAllLocations")
+			outputDataSource.Paths["default"] = fmt.Sprintf("%v/%v.csv", root, "AllStormsAllLocations")
 			outbytes := make([]byte, 0)
 			outbytes = append(outbytes, "StormName,X,Y,IsValid"...)
 			//create random list of ints

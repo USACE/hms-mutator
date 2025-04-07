@@ -56,8 +56,8 @@ func InitStratifiedCompute(a cc.Action, gridfile hms.GridFile, polygonBytes []by
 	}
 	tds := gdal.OpenDataSource(filePath, 0)  //defer disposing the datasource and layers.
 	wds := gdal.OpenDataSource(wfilePath, 0) //defer disposing the datasource and layers.
-	spacing := a.Parameters.GetFloatOrFail("spacing")
-	acceptance_threshold := a.Parameters.GetFloatOrFail("acceptance_threshold")
+	spacing := a.Attributes.GetFloatOrFail("spacing")
+	acceptance_threshold := a.Attributes.GetFloatOrFail("acceptance_threshold")
 	return StratifiedCompute{Spacing: spacing, GridFile: gridfile, TranspositionPolygon: tds, StudyAreaPolygon: wds, AcceptanceDepthThreshold: acceptance_threshold}, nil
 }
 func (sc StratifiedCompute) Compute() (StratifiedComputeResult, error) {
@@ -95,7 +95,7 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource) (Va
 	ref.FromEPSG(5070)
 	outref := gdal.CreateSpatialReference("")
 	outref.FromEPSG(4326)
-	root := path.Dir(inputRoot.Paths[0])
+	root := path.Dir(inputRoot.Paths["default"])
 	//could be a go routine at this level
 	//loop through the storms in the grid file(in order for simplicity)
 	stormcenterbytes := make([]byte, 0)
