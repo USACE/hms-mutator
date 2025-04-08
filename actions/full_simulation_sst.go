@@ -6,6 +6,8 @@ import (
 	"io"
 	"strings"
 
+	"time"
+
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/filesapi"
 	"github.com/usace/hms-mutator/utils"
@@ -30,8 +32,8 @@ type FullRealizationSST struct {
 type FullRealizationResult struct {
 	Events []EventResult
 }
-type FishNetMap map[string]utils.CoordinateList                          //storm type coordinate list.
-type StormTypeSeasonalityDistributionMap map[string]utils.CoordinateList //storm type DiscreteEmpiricalDistribution.
+type FishNetMap map[string]utils.CoordinateList                                         //storm type coordinate list.
+type StormTypeSeasonalityDistributionMap map[string]utils.DiscreteEmpiricalDistribution //storm type DiscreteEmpiricalDistribution.
 
 type EventResult struct {
 	EventNumber int64
@@ -74,9 +76,20 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 		return err
 	}
 	stormTypeSeasonalityDistributionsMap, err := readStormDistributions(a.IOManager, stormTypeSeasonalityDistributionStoreKey, stormTypeDistributionList)
+	if err != nil {
+		return err
+	}
 	//time range of POR
-	porStartDate := a.Attributes.GetStringOrFail("por_start_date")
-	porEndDate := a.Attributes.GetStringOrFail("por_end_date")
+	porStartDateString := a.Attributes.GetStringOrFail("por_start_date")
+	porStartDate, err := time.Parse("20060102", porStartDateString)
+	if err != nil {
+		return err
+	}
+	porEndDateString := a.Attributes.GetStringOrFail("por_end_date")
+	porEndDate, err := time.Parse("20060102", porEndDateString)
+	if err != nil {
+		return err
+	}
 	//calibration event strings
 	calibrationEvents, err := a.Attributes.GetStringSlice("calibration_event_names")
 	if err != nil {
@@ -105,7 +118,7 @@ func listAllPaths(ioManager cc.IOManager, StoreKey string, DirectoryKey string, 
 	}
 	session, ok := store.Session.(cc.S3DataStore)
 	if !ok {
-		return pathList, errors.New("storms_store was not an s3datastore type")
+		return pathList, errors.New(fmt.Sprintf("%v was not an s3datastore type", StoreKey))
 	}
 	rawSession, ok := session.GetSession().(filesapi.FileStore)
 	if !ok {
@@ -143,7 +156,7 @@ func readFishNets(iomanager cc.IOManager, storeKey string, filePaths []string) (
 	}
 	session, ok := store.Session.(cc.S3DataStore)
 	if !ok {
-		return FishNetMap, errors.New("storms_store was not an s3datastore type")
+		return FishNetMap, errors.New(fmt.Sprintf("%v was not an s3datastore type", storeKey))
 	}
 	root := store.Parameters.GetStringOrFail("root")
 	for _, path := range filePaths {
@@ -163,4 +176,33 @@ func readFishNets(iomanager cc.IOManager, storeKey string, filePaths []string) (
 		FishNetMap[path] = coordlist
 	}
 	return FishNetMap, nil
+}
+func readStormDistributions(iomanager cc.IOManager, storeKey string, filePaths []string) (StormTypeSeasonalityDistributionMap, error) {
+	StormTypeSeasonalityDistributionMap := make(map[string]utils.DiscreteEmpiricalDistribution)
+	store, err := iomanager.GetStore(storeKey)
+	if err != nil {
+		return StormTypeSeasonalityDistributionMap, err
+	}
+	session, ok := store.Session.(cc.S3DataStore)
+	if !ok {
+		return StormTypeSeasonalityDistributionMap, errors.New(fmt.Sprintf("%v was not an s3datastore type", storeKey))
+	}
+	root := store.Parameters.GetStringOrFail("root")
+	for _, path := range filePaths {
+		pathpart := strings.Replace(path, fmt.Sprintf("%v/", root), "", -1)
+		reader, err := session.Get(pathpart, "")
+		if err != nil {
+			return StormTypeSeasonalityDistributionMap, err
+		}
+		bytes, err := io.ReadAll(reader)
+		if err != nil {
+			return StormTypeSeasonalityDistributionMap, err
+		}
+		dist := utils.DescreteEmpiricalDistributionFromBytes(bytes)
+		if err != nil {
+			return StormTypeSeasonalityDistributionMap, err
+		}
+		StormTypeSeasonalityDistributionMap[path] = dist
+	}
+	return StormTypeSeasonalityDistributionMap, nil
 }
