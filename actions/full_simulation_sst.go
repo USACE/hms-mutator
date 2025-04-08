@@ -2,6 +2,9 @@ package actions
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"strings"
 
 	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
 	"github.com/usace/cc-go-sdk"
@@ -125,5 +128,30 @@ func listAllPaths(ioManager cc.IOManager, StoreKey string, DirectoryKey string, 
 }
 func readFishNets(iomanager cc.IOManager, storeKey string, filePaths []string) (FishNetMap, error) {
 	FishNetMap := make(map[string]utils.CoordinateList)
+	store, err := iomanager.GetStore(storeKey)
+	if err != nil {
+		return FishNetMap, err
+	}
+	session, ok := store.Session.(cc.S3DataStore)
+	if !ok {
+		return FishNetMap, errors.New("storms_store was not an s3datastore type")
+	}
+	root := store.Parameters.GetStringOrFail("root")
+	for _, path := range filePaths {
+		pathpart := strings.Replace(path, fmt.Sprintf("%v/", root), "", -1)
+		reader, err := session.Get(pathpart, "")
+		if err != nil {
+			return FishNetMap, err
+		}
+		bytes, err := io.ReadAll(reader)
+		if err != nil {
+			return FishNetMap, err
+		}
+		coordlist, err := utils.BytesToCoordinateList(bytes)
+		if err != nil {
+			return FishNetMap, err
+		}
+		FishNetMap[path] = coordlist
+	}
 	return FishNetMap, nil
 }
