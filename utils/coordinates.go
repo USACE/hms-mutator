@@ -1,5 +1,9 @@
 package utils // CoordinateList represents a slice of Coordinates, can be used for many purposes, is used to identify transposition locations spaced thorughout the transposition domain.
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 type CoordinateList struct {
 	Coordinates []Coordinate
@@ -35,4 +39,34 @@ func (cl CoordinateList) ToBytes() []byte {
 		b = append(b, c.ToString()...)
 	}
 	return b
+}
+func BytesToCoordinateList(bytes []byte) (CoordinateList, error) {
+	coords := make([]Coordinate, 0)
+	list := CoordinateList{Coordinates: coords}
+	bytestring := string(bytes)
+	stringlist := strings.Split(bytestring, "\r\n")
+
+	for i, c := range stringlist {
+		if i != 0 { //skip header
+			if len(c) > 0 {
+				points := strings.Split(c, ",")
+				x, err := strconv.ParseFloat(points[0], 64)
+				if err != nil {
+					return list, err
+				}
+				y, err := strconv.ParseFloat(points[1], 64)
+				if err != nil {
+					return list, err
+				}
+				coord := Coordinate{
+					X: x,
+					Y: y,
+				}
+				list.Coordinates = append(list.Coordinates, coord)
+			}
+
+		}
+
+	}
+	return list, nil
 }
