@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/filesapi"
 	"github.com/usace/hms-mutator/utils"
@@ -31,8 +30,9 @@ type FullRealizationSST struct {
 type FullRealizationResult struct {
 	Events []EventResult
 }
-type FishNetMap map[string]utils.CoordinateList //storm type coordinate list.
-type StormTypeSeasonalDistributions map[string]statistics.EmpiricalDistribution
+type FishNetMap map[string]utils.CoordinateList                          //storm type coordinate list.
+type StormTypeSeasonalityDistributionMap map[string]utils.CoordinateList //storm type DiscreteEmpiricalDistribution.
+
 type EventResult struct {
 	EventNumber int64
 	StormPath   string
@@ -63,8 +63,17 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 		return err
 	}
 	fishNetMap, err := readFishNets(a.IOManager, fishnetStoreKey, fishnetList)
+	if err != nil {
+		return err
+	}
 	//storm type seasonality distributions
 	stormTypeSeasonalityDistributionDirectory := a.Attributes.GetStringOrFail("storm_type_seasonality_distibution_directory")
+	stormTypeSeasonalityDistributionStoreKey := a.Attributes.GetStringOrFail("storm_type_seasonality_distibution_store")
+	stormTypeDistributionList, err := listAllPaths(a.IOManager, stormTypeSeasonalityDistributionStoreKey, stormTypeSeasonalityDistributionDirectory, "*.csv")
+	if err != nil {
+		return err
+	}
+	stormTypeSeasonalityDistributionsMap, err := readStormDistributions(a.IOManager, stormTypeSeasonalityDistributionStoreKey, stormTypeDistributionList)
 	//time range of POR
 	porStartDate := a.Attributes.GetStringOrFail("por_start_date")
 	porEndDate := a.Attributes.GetStringOrFail("por_end_date")
