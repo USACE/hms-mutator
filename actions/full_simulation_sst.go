@@ -108,6 +108,9 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 		return err
 	}
 	seeds, err := utils.ReadSeedsFromTiledb(a.IOManager, seedInput.StoreName, seedsKey, "hms-mutator") //hms-mutator is a const in main, but i dont want to create cycles.
+	if err != nil {
+		return err
+	}
 	fmt.Print(seeds)
 	//event/block/simulation relationship
 	blocksKey := a.Attributes.GetStringOrFail("blocks_datasource_key")
@@ -120,6 +123,9 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 		return err
 	}
 	blocks, err := utils.ReadBlocksFromTiledb(pm, blocksInput.StoreName, blocksInput.Name)
+	if err != nil {
+		return err
+	}
 	fmt.Print(blocks)
 	return nil
 }
