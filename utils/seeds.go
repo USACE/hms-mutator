@@ -26,7 +26,7 @@ func ReadSeedsFromTiledb(ioManager cc.IOManager, tileDbStoreName string, dataset
 		return seeds, fmt.Errorf("the store named %v does not implement metadata store", tileDbStoreName)
 	}
 	seedNames := make([]string, 0)
-	err = tdbms.GetMetadata("seed_columns", seedNames)
+	err = tdbms.GetMetadata("seed_columns", &seedNames)
 	if err != nil {
 		return seeds, err
 	}
@@ -50,10 +50,9 @@ func ReadSeedsFromTiledb(ioManager cc.IOManager, tileDbStoreName string, dataset
 		return seeds, err
 	}
 	eventSeeds := make([]int64, 0)
-	result.GetColumn(columnIndex, 1, eventSeeds) //how do i know for certain attribute order?
+	result.GetColumn(columnIndex, 1, &eventSeeds) //how do i know for certain attribute order?
 	realizationSeeds := make([]int64, 0)
-	result.GetColumn(columnIndex, 0, realizationSeeds) //how do i know for certain attribute order?
-	fmt.Println(result.Data...)
+	result.GetColumn(columnIndex, 0, &realizationSeeds) //how do i know for certain attribute order?
 	for i, es := range eventSeeds {
 		seeds = append(seeds, SeedSet{EventSeed: es, RealizationSeed: realizationSeeds[i]})
 	}
