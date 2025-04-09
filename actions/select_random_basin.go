@@ -9,6 +9,7 @@ import (
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
+	"github.com/usace/hms-mutator/utils"
 )
 
 //the objective of this action is to randomize the basin utilized in an HMS compute
@@ -59,8 +60,8 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	inDS := sba.inputDS
 	inDSRoot := inDS.Paths["default"]
 	inDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), basinExtension)
-	fmt.Println(inDS.Paths["default"])
-	basinbytes, err := pm.GetFile(sba.inputDS, 0)
+	//fmt.Println(inDS.Paths["default"])
+	basinbytes, err := utils.GetFile(*pm, sba.inputDS, "default") //pm.GetFile(sba.inputDS, 0)
 	if err != nil {
 		return time.Now(), err
 	}
@@ -68,15 +69,15 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	outDS := sba.outputDS
 	outDSRoot := outDS.Paths["default"]
 	outDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetBasinFileName, basinExtension)
-	fmt.Println(outDS.Paths["default"])
-	err = pm.PutFile(basinbytes, sba.outputDS, 0)
+	//fmt.Println(outDS.Paths["default"])
+	err = utils.PutFile(basinbytes, *pm, sba.outputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}
 
 	inDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), controlExtension)
-	fmt.Println(inDS.Paths["default"])
-	controlbytes, err := pm.GetFile(sba.inputDS, 0)
+	//fmt.Println(inDS.Paths["default"])
+	controlbytes, err := utils.GetFile(*pm, sba.inputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}
@@ -99,7 +100,7 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	//upload the file to filesapi with the appropriate new name.
 	outDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
 	fmt.Println(outDS.Paths["default"])
-	err = pm.PutFile(controlbytes, sba.outputDS, 0)
+	err = utils.PutFile(controlbytes, *pm, sba.outputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}

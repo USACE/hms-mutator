@@ -55,6 +55,7 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
+	fmt.Print(stormList)
 	//if i wanted to bootstrap, i could bootstrap the storm list now...
 
 	///use fishnets to figure out placements - select from list of valid placements.
@@ -68,6 +69,7 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
+	fmt.Print(fishNetMap)
 	//storm type seasonality distributions
 	stormTypeSeasonalityDistributionDirectory := a.Attributes.GetStringOrFail("storm_type_seasonality_distibution_directory")
 	stormTypeSeasonalityDistributionStoreKey := a.Attributes.GetStringOrFail("storm_type_seasonality_distibution_store")
@@ -79,34 +81,41 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
+	fmt.Print(stormTypeSeasonalityDistributionsMap)
 	//time range of POR
 	porStartDateString := a.Attributes.GetStringOrFail("por_start_date")
 	porStartDate, err := time.Parse("20060102", porStartDateString)
 	if err != nil {
 		return err
 	}
+	fmt.Print(porStartDate)
 	porEndDateString := a.Attributes.GetStringOrFail("por_end_date")
 	porEndDate, err := time.Parse("20060102", porEndDateString)
 	if err != nil {
 		return err
 	}
+	fmt.Print(porEndDate)
 	//calibration event strings
 	calibrationEvents, err := a.Attributes.GetStringSlice("calibration_event_names")
 	if err != nil {
 		return err
 	}
+	fmt.Print(calibrationEvents)
 	//seeds
 	seedsKey := a.Attributes.GetStringOrFail("seed_datasource_key")
 	seedInput, err := a.GetInputDataSource(seedsKey) //expecting this to be a tiledb dense array
 	if err != nil {
 		return err
 	}
+	seeds, err := utils.ReadSeedsFromTiledb(a.IOManager, seedInput.StoreName, seedsKey, "hms-mutator") //hms-mutator is a const in main, but i dont want to create cycles.
+	fmt.Print(seeds)
 	//event/block/simulation relationship
 	blocksKey := a.Attributes.GetStringOrFail("blocks_datasource_key")
 	blocksInput, err := a.GetInputDataSource(blocksKey) //expecting this to be tiledb
 	if err != nil {
 		return err
 	}
+	fmt.Print(blocksInput)
 	return nil
 }
 
