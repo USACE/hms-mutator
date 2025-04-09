@@ -1,4 +1,5 @@
-package utils // CoordinateList represents a slice of Coordinates, can be used for many purposes, is used to identify transposition locations spaced thorughout the transposition domain.
+package utils
+
 import (
 	"fmt"
 	"slices"

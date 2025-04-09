@@ -115,7 +115,12 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(blocksInput)
+	pm, err := cc.InitPluginManager()
+	if err != nil {
+		return err
+	}
+	blocks, err := utils.ReadBlocksFromTiledb(pm, blocksInput.StoreName, blocksInput.Name)
+	fmt.Print(blocks)
 	return nil
 }
 
