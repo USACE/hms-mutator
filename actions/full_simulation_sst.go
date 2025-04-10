@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"strings"
 
 	"time"
@@ -29,9 +30,7 @@ This action will generate a full realization sized set of storms, placements, an
 type FullRealizationSST struct {
 	action cc.Action
 }
-type FullRealizationResult struct {
-	Events []EventResult
-}
+type FullRealizationResult []EventResult
 type FishNetMap map[string]utils.CoordinateList                                         //storm type coordinate list.
 type StormTypeSeasonalityDistributionMap map[string]utils.DiscreteEmpiricalDistribution //storm type DiscreteEmpiricalDistribution.
 
@@ -45,7 +44,7 @@ type EventResult struct {
 	BasinPath   string
 }
 
-func (frsst FullRealizationSST) Compute(realizationNumber int) error {
+func (frsst FullRealizationSST) Compute(realizationNumber int32, pm *cc.PluginManager) error {
 	a := frsst.action
 	//get parameters
 	///get storms
@@ -55,7 +54,6 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(stormList)
 	//if i wanted to bootstrap, i could bootstrap the storm list now...
 
 	///use fishnets to figure out placements - select from list of valid placements.
@@ -69,7 +67,6 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(fishNetMap)
 	//storm type seasonality distributions
 	stormTypeSeasonalityDistributionDirectory := a.Attributes.GetStringOrFail("storm_type_seasonality_distibution_directory")
 	stormTypeSeasonalityDistributionStoreKey := a.Attributes.GetStringOrFail("storm_type_seasonality_distibution_store")
@@ -81,26 +78,22 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(stormTypeSeasonalityDistributionsMap)
 	//time range of POR
 	porStartDateString := a.Attributes.GetStringOrFail("por_start_date")
 	porStartDate, err := time.Parse("20060102", porStartDateString)
 	if err != nil {
 		return err
 	}
-	fmt.Print(porStartDate)
 	porEndDateString := a.Attributes.GetStringOrFail("por_end_date")
 	porEndDate, err := time.Parse("20060102", porEndDateString)
 	if err != nil {
 		return err
 	}
-	fmt.Print(porEndDate)
 	//calibration event strings
 	calibrationEvents, err := a.Attributes.GetStringSlice("calibration_event_names")
 	if err != nil {
 		return err
 	}
-	fmt.Print(calibrationEvents)
 	//seeds
 	seedsKey := a.Attributes.GetStringOrFail("seed_datasource_key")
 	seedInput, err := a.GetInputDataSource(seedsKey) //expecting this to be a tiledb dense array
@@ -111,14 +104,9 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(seeds)
 	//event/block/simulation relationship
 	blocksKey := a.Attributes.GetStringOrFail("blocks_datasource_key")
 	blocksInput, err := a.GetInputDataSource(blocksKey) //expecting this to be tiledb
-	if err != nil {
-		return err
-	}
-	pm, err := cc.InitPluginManager()
 	if err != nil {
 		return err
 	}
@@ -126,10 +114,86 @@ func (frsst FullRealizationSST) Compute(realizationNumber int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(blocks)
-	return nil
+	results, err := compute(realizationNumber, stormList, calibrationEvents, fishNetMap, stormTypeSeasonalityDistributionsMap, porStartDate, porEndDate, seeds, blocks)
+	//write results to data stores
+	fmt.Println(results) //debugging placeholder
+	return err
+}
+func compute(realizationNumber int32, stormNames []string, calibrationEventNames []string, fishnets FishNetMap, seasonalDistributions StormTypeSeasonalityDistributionMap, porStart time.Time, porEnd time.Time, seeds []utils.SeedSet, blocks []utils.Block) (FullRealizationResult, error) {
+
+	results := make(FullRealizationResult, 0)
+	for _, b := range blocks {
+		if b.RealizationIndex == realizationNumber {
+			if b.BlockEventCount > 0 {
+				for en := b.BlockEventStart; en <= b.BlockEventEnd; en++ {
+					//create random number generator for event
+					enRng := rand.New(rand.NewSource(seeds[en].EventSeed))
+					//sample storm name
+					stormName := stormNames[enRng.Intn(len(stormNames))]
+					//calculate storm type from storm name
+					stormType := strings.Split(stormName, "_")[3] //assuming yyyymmdd_xxhr_data-type_storm-type_storm-rank - if data-type is dropped as i hope this needs to be updated to 2
+					//sample calibration event
+					calibrationEvent := calibrationEventNames[enRng.Intn(len(calibrationEventNames))]
+					//fetch fishnet based on storm name
+					fishnet, ok := fishnets[stormName] //storm name is full path not just file name.
+					if !ok {
+						return results, fmt.Errorf("could not find storm name %v in fishnet map", stormName)
+					}
+					//sample location
+					coordinate := fishnet.Coordinates[enRng.Intn(len(fishnet.Coordinates))]
+					//fetch seasonal distribution based on storm type
+					seasonalDistribution, ok := seasonalDistributions[stormType]
+					if !ok {
+						return results, fmt.Errorf("could not find the seasonal distribution for type %v", stormType)
+					}
+					//fetch day of year
+					dayOfYear := seasonalDistribution.Sample(enRng.Float64())
+					//determine year.
+					yearCount := porEnd.Year() - porStart.Year() //this needs to be checked on both ends for valid dates.
+					dayofyearInrange := false
+					year := 0
+					for !dayofyearInrange {
+						initalYearGuess := enRng.Intn(yearCount) + porStart.Year()
+						if initalYearGuess == porStart.Year() {
+							if dayOfYear >= porStart.YearDay() {
+								dayofyearInrange = true
+								year = initalYearGuess
+							}
+						} else if initalYearGuess == porEnd.Year() {
+							if dayOfYear <= porEnd.YearDay() {
+								dayofyearInrange = true
+								year = initalYearGuess
+							}
+						}
+					}
+					//create start date from day of year and year
+					startDate := time.Date(year, 1, 1, 1, 1, 1, 1, time.Local)
+					//convert day of year to duration
+					sdur := fmt.Sprintf("%vh", dayOfYear*24)
+					dur, err := time.ParseDuration(sdur)
+					if err != nil {
+						return results, err
+					}
+					startDate = startDate.Add(dur)
+					event := EventResult{
+						EventNumber: en,
+						StormPath:   stormName,
+						StormType:   stormType,
+						X:           coordinate.X,
+						Y:           coordinate.Y,
+						BasinPath:   fmt.Sprintf("%v_%v", startDate.Format("20160102"), calibrationEvent), //need to add root
+					}
+					results = append(results, event)
+				}
+
+			}
+
+		}
+	}
+	return results, nil
 }
 
+// consider moving this to utils.io
 func listAllPaths(ioManager cc.IOManager, StoreKey string, DirectoryKey string, filter string) ([]string, error) {
 	store, err := ioManager.GetStore(StoreKey)
 	var pathList []string
@@ -138,7 +202,7 @@ func listAllPaths(ioManager cc.IOManager, StoreKey string, DirectoryKey string, 
 	}
 	session, ok := store.Session.(cc.S3DataStore)
 	if !ok {
-		return pathList, errors.New(fmt.Sprintf("%v was not an s3datastore type", StoreKey))
+		return pathList, fmt.Errorf("%v was not an s3datastore type", StoreKey)
 	}
 	rawSession, ok := session.GetSession().(filesapi.FileStore)
 	if !ok {
@@ -168,6 +232,8 @@ func listAllPaths(ioManager cc.IOManager, StoreKey string, DirectoryKey string, 
 		}
 	}
 }
+
+// consider moving this to utils.coordinates
 func readFishNets(iomanager cc.IOManager, storeKey string, filePaths []string) (FishNetMap, error) {
 	FishNetMap := make(map[string]utils.CoordinateList)
 	store, err := iomanager.GetStore(storeKey)
@@ -197,6 +263,8 @@ func readFishNets(iomanager cc.IOManager, storeKey string, filePaths []string) (
 	}
 	return FishNetMap, nil
 }
+
+// consider moving this to utils.discrete_emprical
 func readStormDistributions(iomanager cc.IOManager, storeKey string, filePaths []string) (StormTypeSeasonalityDistributionMap, error) {
 	StormTypeSeasonalityDistributionMap := make(map[string]utils.DiscreteEmpiricalDistribution)
 	store, err := iomanager.GetStore(storeKey)
