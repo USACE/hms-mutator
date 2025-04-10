@@ -1,15 +1,19 @@
 package utils
 
 import (
+	"fmt"
+	"io"
 	"strconv"
 	"strings"
+
+	"github.com/usace/cc-go-sdk"
 )
 
 type DiscreteEmpiricalDistribution struct {
 	bin_starts             []int
 	cumulative_probability []float64
 }
-
+type StormTypeSeasonalityDistributionMap map[string]DiscreteEmpiricalDistribution //storm type DiscreteEmpiricalDistribution.
 func NewDescreteEmpiricalDistribution(bin_starts []int, cumuatlive_probs []float64) DiscreteEmpiricalDistribution {
 	return DiscreteEmpiricalDistribution{bin_starts: bin_starts, cumulative_probability: cumuatlive_probs}
 }
@@ -49,4 +53,33 @@ func (ded DiscreteEmpiricalDistribution) Sample(probability float64) int {
 		return ded.bin_starts[0]
 	}
 	return int(ded.bin_starts[len(ded.bin_starts)-1])
+}
+func ReadStormDistributions(iomanager cc.IOManager, storeKey string, filePaths []string) (StormTypeSeasonalityDistributionMap, error) {
+	StormTypeSeasonalityDistributionMap := make(map[string]DiscreteEmpiricalDistribution)
+	store, err := iomanager.GetStore(storeKey)
+	if err != nil {
+		return StormTypeSeasonalityDistributionMap, err
+	}
+	session, ok := store.Session.(cc.S3DataStore)
+	if !ok {
+		return StormTypeSeasonalityDistributionMap, fmt.Errorf("%v was not an s3datastore type", storeKey)
+	}
+	root := store.Parameters.GetStringOrFail("root")
+	for _, path := range filePaths {
+		pathpart := strings.Replace(path, fmt.Sprintf("%v/", root), "", -1)
+		reader, err := session.Get(pathpart, "")
+		if err != nil {
+			return StormTypeSeasonalityDistributionMap, err
+		}
+		bytes, err := io.ReadAll(reader)
+		if err != nil {
+			return StormTypeSeasonalityDistributionMap, err
+		}
+		dist := DescreteEmpiricalDistributionFromBytes(bytes)
+		if err != nil {
+			return StormTypeSeasonalityDistributionMap, err
+		}
+		StormTypeSeasonalityDistributionMap[path] = dist
+	}
+	return StormTypeSeasonalityDistributionMap, nil
 }

@@ -1,8 +1,12 @@
 package utils // CoordinateList represents a slice of Coordinates, can be used for many purposes, is used to identify transposition locations spaced thorughout the transposition domain.
 import (
+	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
+
+	"github.com/usace/cc-go-sdk"
 )
 
 type CoordinateList struct {
@@ -14,7 +18,7 @@ type Coordinate struct {
 	X float64
 	Y float64
 }
-
+type FishNetMap map[string]CoordinateList //storm type coordinate list.
 func (o Coordinate) DetermineXandYOffset(c Coordinate) Coordinate {
 	xdifference := o.X - c.X
 	ydifference := o.Y - c.Y
@@ -69,4 +73,33 @@ func BytesToCoordinateList(bytes []byte) (CoordinateList, error) {
 
 	}
 	return list, nil
+}
+func ReadFishNets(iomanager cc.IOManager, storeKey string, filePaths []string) (FishNetMap, error) {
+	FishNetMap := make(map[string]CoordinateList)
+	store, err := iomanager.GetStore(storeKey)
+	if err != nil {
+		return FishNetMap, err
+	}
+	session, ok := store.Session.(cc.S3DataStore)
+	if !ok {
+		return FishNetMap, errors.New(fmt.Sprintf("%v was not an s3datastore type", storeKey))
+	}
+	root := store.Parameters.GetStringOrFail("root")
+	for _, path := range filePaths {
+		pathpart := strings.Replace(path, fmt.Sprintf("%v/", root), "", -1)
+		reader, err := session.Get(pathpart, "")
+		if err != nil {
+			return FishNetMap, err
+		}
+		bytes, err := io.ReadAll(reader)
+		if err != nil {
+			return FishNetMap, err
+		}
+		coordlist, err := BytesToCoordinateList(bytes)
+		if err != nil {
+			return FishNetMap, err
+		}
+		FishNetMap[path] = coordlist
+	}
+	return FishNetMap, nil
 }

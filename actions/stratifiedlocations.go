@@ -86,7 +86,7 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource) (Va
 	if err != nil {
 		return computeResult, err
 	}
-	//take list of cell centers for the study area
+	//take list of cell centers for the study area to query grid for missing data
 	studyAreaCellCenters, err := generateUniformPointList(sc.StudyAreaPolygon, sc.Spacing)
 	if err != nil {
 		return computeResult, err
