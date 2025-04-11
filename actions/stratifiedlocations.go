@@ -220,28 +220,26 @@ func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComp
 			//invert that offset
 			offset.X = -offset.X
 			offset.Y = -offset.Y
-			shiftableWatershedBoundary := sap.Geometry().Clone() //shift watershed boundary
-			//defer shiftedWatershedBoundary.Destroy()
-			//shiftedWatershedBoundary = shiftedWatershedBoundary.Geometry(0)
-			geometrycount := shiftableWatershedBoundary.GeometryCount()
-			//count := shiftedWatershedBoundary.PointCount()
-			//origCount := wf.Geometry().Geometry(0).PointCount()
-
-			for g := 0; g < geometrycount; g++ {
-				geometry := shiftableWatershedBoundary.Geometry(g)
-				defer geometry.Destroy()
-				geometryPointCount := geometry.PointCount()
-				//fmt.Printf("geometry point count %v\n", geometryPointCount)
-				for i := 0; i < geometryPointCount; i++ {
-					px, py, pz := geometry.Point(i)
-					shiftableWatershedBoundary.Geometry(g).SetPoint(i, px-offset.X, py-offset.Y, pz) //does this work or does it insert?
+			func(shift utils.Coordinate) {
+				shiftableWatershedBoundary := sap.Geometry().Clone() //shift watershed boundary
+				defer shiftableWatershedBoundary.Destroy()
+				geometrycount := shiftableWatershedBoundary.GeometryCount()
+				for g := 0; g < geometrycount; g++ {
+					geometry := shiftableWatershedBoundary.Geometry(g)
+					defer geometry.Destroy()
+					geometryPointCount := geometry.PointCount()
+					for i := 0; i < geometryPointCount; i++ {
+						px, py, pz := geometry.Point(i)
+						shiftableWatershedBoundary.Geometry(g).SetPoint(i, px-offset.X, py-offset.Y, pz) //does this work or does it insert?
+					}
 				}
-			}
-			shiftContained := sc.TranspositionPolygon.LayerByIndex(0).NextFeature().Geometry().Contains(shiftableWatershedBoundary)
-			if shiftContained {
-				locationInfo.IsValid = true
-				validLocations.Coordinates = append(validLocations.Coordinates, candidate)
-			}
+				shiftContained := sc.TranspositionPolygon.LayerByIndex(0).NextFeature().Geometry().Contains(shiftableWatershedBoundary)
+				if shiftContained {
+					locationInfo.IsValid = true
+					validLocations.Coordinates = append(validLocations.Coordinates, candidate)
+				}
+			}(offset)
+
 			allStormsAllLocations = append(allStormsAllLocations, locationInfo)
 			//next cell center
 		} //next transposition location

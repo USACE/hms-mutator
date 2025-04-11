@@ -203,8 +203,8 @@ func main() {
 				pm.Logger.Error("could not initalize valid stratified locations for this payload")
 				return
 			}
-			inputSource, err := pm.GetInputDataSource("Cumulative Grids")
-			output, err := sla.DetermineValidLocations(inputSource) //update to be based on output location?
+			//inputSource, err := pm.GetInputDataSource("Cumulative Grids")
+			output, err := sla.DetermineValidLocationsQuickly() //sla.DetermineValidLocations(inputSource) //update to be based on output location?
 			if err != nil {
 				pm.Logger.Error("could not compute valid stratified locations for this payload")
 				return
