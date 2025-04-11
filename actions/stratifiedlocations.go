@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"path"
@@ -154,6 +155,90 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource) (Va
 				}
 			}
 			if hasPrecipitation && !hasNull {
+				locationInfo.IsValid = true
+				validLocations.Coordinates = append(validLocations.Coordinates, candidate)
+			}
+			allStormsAllLocations = append(allStormsAllLocations, locationInfo)
+			//next cell center
+		} //next transposition location
+		validLocationMap[fmt.Sprintf("%v.csv", startDate)] = validLocations
+	} //next storm
+	computeResult.StormMap = validLocationMap
+	computeResult.AllStormsAllLocations = allStormsAllLocations
+	fmt.Println(string(stormcenterbytes))
+	return computeResult, nil
+}
+func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComputeResult, error) {
+	var computeResult ValidLocationsComputeResult
+	allStormsAllLocations := make([]LocationInfo, 0)
+	validLocationMap := make(map[string]utils.CoordinateList, 0)
+	//generate of candidate storm centers.
+	candidateStormCenters, err := sc.generateStormCenters()
+	if err != nil {
+		return computeResult, err
+	}
+	sap := sc.StudyAreaPolygon.LayerByIndex(0).NextFeature()
+	defer sap.Destroy()
+	if sap.Geometry().Type() != 3 {
+		return computeResult, errors.New("watershed boundary geometry not a simple polygon")
+	}
+	if sap.IsNull() {
+		fmt.Println("im null...")
+	}
+
+	ref := gdal.CreateSpatialReference("")
+	ref.FromEPSG(5070)
+
+	//could be a go routine at this level
+	//loop through the storms in the grid file(in order for simplicity)
+	stormcenterbytes := make([]byte, 0)
+	for _, storm := range sc.GridFile.Events {
+		//create a validlocation coordinate list.
+		validLocations := utils.CoordinateList{Coordinates: make([]utils.Coordinate, 0)}
+		//determine the center of the storm.
+
+		stormCenter, err := gdal.CreateFromWKT(fmt.Sprintf("Point (%v %v)\n", storm.CenterX, storm.CenterY), ref)
+		if err != nil {
+			return computeResult, err
+		}
+
+		stormCoord := utils.Coordinate{X: stormCenter.Y(0), Y: stormCenter.X(0)}
+		stormcenterbytes = append(stormcenterbytes, fmt.Sprintf("%v,%v,%v\n", storm.Name, stormCoord.X, stormCoord.Y)...)
+		//determine the start date of the storm
+		startDate := strings.Split(storm.Name, " ")[1]
+
+		//fmt.Println(time.Now())
+		//loop through each point in the candidate storm centers
+		for _, candidate := range candidateStormCenters.Coordinates {
+			locationInfo := LocationInfo{
+				StormName:  storm.Name,
+				Coordinate: candidate,
+				IsValid:    false,
+			}
+			//calculate an offset from the center to the new destination location
+			offset := candidate.DetermineXandYOffset(stormCoord)
+			//invert that offset
+			offset.X = -offset.X
+			offset.Y = -offset.Y
+			shiftableWatershedBoundary := sap.Geometry().Clone() //shift watershed boundary
+			//defer shiftedWatershedBoundary.Destroy()
+			//shiftedWatershedBoundary = shiftedWatershedBoundary.Geometry(0)
+			geometrycount := shiftableWatershedBoundary.GeometryCount()
+			//count := shiftedWatershedBoundary.PointCount()
+			//origCount := wf.Geometry().Geometry(0).PointCount()
+
+			for g := 0; g < geometrycount; g++ {
+				geometry := shiftableWatershedBoundary.Geometry(g)
+				defer geometry.Destroy()
+				geometryPointCount := geometry.PointCount()
+				//fmt.Printf("geometry point count %v\n", geometryPointCount)
+				for i := 0; i < geometryPointCount; i++ {
+					px, py, pz := geometry.Point(i)
+					shiftableWatershedBoundary.Geometry(g).SetPoint(i, px-offset.X, py-offset.Y, pz) //does this work or does it insert?
+				}
+			}
+			shiftContained := sc.TranspositionPolygon.LayerByIndex(0).NextFeature().Geometry().Contains(shiftableWatershedBoundary)
+			if shiftContained {
 				locationInfo.IsValid = true
 				validLocations.Coordinates = append(validLocations.Coordinates, candidate)
 			}

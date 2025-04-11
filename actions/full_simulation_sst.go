@@ -73,6 +73,8 @@ func (frsst FullRealizationSST) Compute(realizationNumber int32, pm *cc.PluginMa
 	if err != nil {
 		return err
 	}
+	//basin root directory
+	basinRootDir := a.Attributes.GetStringOrFail("basin_root_directory")
 	//time range of POR
 	porStartDateString := a.Attributes.GetStringOrFail("por_start_date")
 	porStartDate, err := time.Parse("20060102", porStartDateString)
@@ -109,14 +111,14 @@ func (frsst FullRealizationSST) Compute(realizationNumber int32, pm *cc.PluginMa
 	if err != nil {
 		return err
 	}
-	results, err := compute(realizationNumber, stormList, calibrationEvents, fishNetMap, stormTypeSeasonalityDistributionsMap, porStartDate, porEndDate, seeds, blocks)
+	results, err := compute(realizationNumber, stormList, calibrationEvents, basinRootDir, fishNetMap, stormTypeSeasonalityDistributionsMap, porStartDate, porEndDate, seeds, blocks)
 	if err != nil {
 		return err
 	}
 	//write results to data stores
 	return writeResultsToTileDB(pm, blocksInput.StoreName, results, "storms") //update this to not referenceblock store, and also not hardcode the name to "storms"
 }
-func compute(realizationNumber int32, stormNames []string, calibrationEventNames []string, fishnets utils.FishNetMap, seasonalDistributions utils.StormTypeSeasonalityDistributionMap, porStart time.Time, porEnd time.Time, seeds []utils.SeedSet, blocks []utils.Block) (FullRealizationResult, error) {
+func compute(realizationNumber int32, stormNames []string, calibrationEventNames []string, basinRootDir string, fishnets utils.FishNetMap, seasonalDistributions utils.StormTypeSeasonalityDistributionMap, porStart time.Time, porEnd time.Time, seeds []utils.SeedSet, blocks []utils.Block) (FullRealizationResult, error) {
 	results := make(FullRealizationResult, 0)
 	for _, b := range blocks {
 		if b.RealizationIndex == realizationNumber {
@@ -177,7 +179,7 @@ func compute(realizationNumber int32, stormNames []string, calibrationEventNames
 						StormType:   stormType,
 						X:           coordinate.X,
 						Y:           coordinate.Y,
-						BasinPath:   fmt.Sprintf("%v_%v", startDate.Format("20060102"), calibrationEvent), //need to add root
+						BasinPath:   fmt.Sprintf("%v/%v_%v", basinRootDir, startDate.Format("2006-01-02"), calibrationEvent),
 					}
 					results = append(results, event)
 				}
