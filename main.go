@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/usace/cc-go-sdk"
 	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/actions"
 	"github.com/usace/hms-mutator/hms"
+	"github.com/usace/hms-mutator/utils"
 )
 
 var pluginName string = "hms-mutator"
@@ -133,16 +133,15 @@ func main() {
 				pm.Logger.Error("could not find DSS Grid Cache datasource")
 				return
 			}
-			root := dssGridCacheDataSource.Paths[0]
+			root := dssGridCacheDataSource.Paths["default"]
 			stormName := strings.Replace(output.StormName, "\\", "/", -1)
 			stormDataSource := cc.DataSource{
 				Name:      "DssFile",
 				ID:        &uuid.NameSpaceDNS,
-				Paths:     []string{fmt.Sprintf("%v%v", root, stormName)},
-				DataPaths: []string{},
+				Paths:     map[string]string{"default": fmt.Sprintf("%v%v", root, stormName)},
 				StoreName: dssGridCacheDataSource.StoreName,
 			}
-			dssBytes, err := pm.GetFile(stormDataSource, 0)
+			dssBytes, err := utils.GetFile(*pm, stormDataSource, "default")
 			if err != nil {
 				pm.Logger.Error("could not find storm")
 				return
@@ -187,16 +186,16 @@ func main() {
 				pm.Logger.Error("could not put stratified locations for this payload")
 				return
 			}
-			pm.PutFile(output.CandiateLocations.ToBytes(), locations, 0)
+			utils.PutFile(output.CandiateLocations.ToBytes(), *pm, locations, "default")
 			gridFileOutput, err := pm.GetOutputDataSource("GridFile")
 			if err != nil {
 				pm.Logger.Error("could not put gridfiles for this payload")
 				return
 			}
-			root := path.Dir(gridFileOutput.Paths[0])
+			root := path.Dir(gridFileOutput.Paths["default"])
 			for k, v := range output.GridFiles {
-				gridFileOutput.Paths[0] = fmt.Sprintf("%v/%v.grid", root, k)
-				pm.PutFile(v, gridFileOutput, 0)
+				gridFileOutput.Paths["default"] = fmt.Sprintf("%v/%v.grid", root, k)
+				utils.PutFile(v, *pm, gridFileOutput, "default")
 			}
 		case "valid_stratified_locations":
 			sla, err := actions.InitStratifiedCompute(a, gridFile, transpositionDomainBytes, watershedDomainBytes, payload.Outputs[0])
@@ -215,12 +214,12 @@ func main() {
 				pm.Logger.Error("could not put valid stratified locations for this payload")
 				return
 			}
-			root := path.Dir(outputDataSource.DataPaths[0])
+			root := path.Dir(outputDataSource.DataPaths["default"])
 			for k, v := range output.StormMap {
-				outputDataSource.Paths[0] = fmt.Sprintf("%v/%v.csv", root, k)
-				pm.PutFile(v.ToBytes(), outputDataSource, 0)
+				outputDataSource.Paths["default"] = fmt.Sprintf("%v/%v.csv", root, k)
+				utils.PutFile(v.ToBytes(), *pm, outputDataSource, "default")
 			}
-			outputDataSource.Paths[0] = fmt.Sprintf("%v/%v.csv", root, "AllStormsAllLocations")
+			outputDataSource.Paths["default"] = fmt.Sprintf("%v/%v.csv", root, "AllStormsAllLocations")
 			outbytes := make([]byte, 0)
 			outbytes = append(outbytes, "StormName,X,Y,IsValid"...)
 			//create random list of ints
@@ -236,7 +235,7 @@ func main() {
 			for i, _ := range output.AllStormsAllLocations {
 				outbytes = append(outbytes, fmt.Sprintf("%v,%v,%v,%v\n", output.AllStormsAllLocations[indexes[i]].StormName, output.AllStormsAllLocations[indexes[i]].Coordinate.X, output.AllStormsAllLocations[indexes[i]].Coordinate.Y, output.AllStormsAllLocations[indexes[i]].IsValid)...)
 			}
-			pm.PutFile(outbytes, outputDataSource, 0)
+			utils.PutFile(outbytes, *pm, outputDataSource, "default")
 		}
 	}
 	if err != nil {
@@ -263,13 +262,13 @@ func getInputBytes(keyword string, extension string, payload cc.Payload, pm *cc.
 	returnBytes := make([]byte, 0)
 	for _, input := range payload.Inputs {
 		if strings.Contains(input.Name, keyword) {
-			index := 0
+			index := ""
 			has := false
 			if extension != "" {
 				for i, Path := range input.Paths {
-					index, _ := strconv.Atoi(i)
+					//index, _ := strconv.Atoi(i)
 					if strings.Contains(Path, extension) {
-						index = index
+						index = i
 						has = true
 					}
 				}
@@ -277,7 +276,7 @@ func getInputBytes(keyword string, extension string, payload cc.Payload, pm *cc.
 				has = true
 			}
 			if has {
-				return pm.GetFile(input, index)
+				return utils.GetFile(*pm, input, index)
 			} else {
 				return returnBytes, errors.New("could not find extension " + extension)
 			}
@@ -291,7 +290,7 @@ func putOutputBytes(data []byte, keyword string, payload cc.Payload, pm *cc.Plug
 	if err != nil {
 		return err
 	}
-	err = pm.PutFile(data, output, 0)
+	err = utils.PutFile(data, *pm, output, "default")
 	if err != nil {
 		return err
 	}
