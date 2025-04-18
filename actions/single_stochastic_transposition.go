@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/usace/cc-go-sdk"
-	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/transposition"
+	"github.com/usace/hms-mutator/utils"
 )
 
 var pluginName string = "hms-mutator"
@@ -15,7 +15,7 @@ type SingleStochasticTransposition struct {
 	pm                       *cc.PluginManager
 	gridFile                 hms.GridFile
 	metFile                  hms.Met
-	seedSet                  plugin.SeedSet
+	seedSet                  utils.SeedSet
 	foundMCA                 bool
 	mcaFile                  hms.Mca
 	transpositionDomainBytes []byte
@@ -28,7 +28,7 @@ type StochasticTranspositionResult struct {
 	StormName string
 }
 
-func InitSingleStochasticTransposition(pm *cc.PluginManager, gridFile hms.GridFile, metFile hms.Met, foundMCA bool, mcaFile hms.Mca, seedSet plugin.SeedSet, tbytes []byte, wbytes []byte) SingleStochasticTransposition {
+func InitSingleStochasticTransposition(pm *cc.PluginManager, gridFile hms.GridFile, metFile hms.Met, foundMCA bool, mcaFile hms.Mca, seedSet utils.SeedSet, tbytes []byte, wbytes []byte) SingleStochasticTransposition {
 	return SingleStochasticTransposition{
 		pm:                       pm,
 		gridFile:                 gridFile,

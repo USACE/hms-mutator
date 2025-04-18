@@ -15,19 +15,18 @@ import (
 func TestStratifiedLocations(t *testing.T) {
 	parameters := make(map[string]any)
 	parameters["spacing"] = 0.00902 // 1 km in the duwamish area (42,-124) is .00902 decimal degrees https://forest.moscowfsl.wsu.edu/fswepp/rc/kmlatcon.html
+	var attrs cc.PayloadAttributes = parameters
 	action := cc.Action{
-		Name:        "stratified_locations",
-		Type:        "compute",
+		Type:        "stratified_locations",
 		Description: "create stratified locations for storms",
-		Parameters:  parameters,
 	}
-	outputDataSource := cc.DataSource{
+	action.Attributes = attrs
+	/*outputDataSource := cc.DataSource{
 		Name:      "outputdestination",
 		ID:        &uuid.NameSpaceDNS,
-		Paths:     []string{"/app/data"},
-		DataPaths: []string{},
+		Paths:     map[string]string{"default": "/app/data"},
 		StoreName: "Local",
-	}
+	}*/
 	gfbytes, err := os.ReadFile("/workspaces/hms-mutator/exampledata/D_Transpose.grid")
 	if err != nil {
 		t.Fail()
@@ -44,7 +43,7 @@ func TestStratifiedLocations(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	sc, err := InitStratifiedCompute(action, gf, pbytes, wbytes, outputDataSource)
+	sc, err := InitStratifiedCompute(action, gf, pbytes, wbytes)
 	if err != nil {
 		t.Fail()
 	}
@@ -57,19 +56,18 @@ func TestValidStratifiedLocations(t *testing.T) {
 	parameters := make(map[string]any)
 	parameters["spacing"] = 0.00902 * 4 // 1 km in the duwamish area (42,-124) is .00902 decimal degrees https://forest.moscowfsl.wsu.edu/fswepp/rc/kmlatcon.html
 	parameters["acceptance_threshold"] = 0.001
+	var attrs cc.PayloadAttributes = parameters
 	action := cc.Action{
-		Name:        "stratified_locations",
-		Type:        "compute",
+		Type:        "stratified_locations",
 		Description: "create stratified locations for storms",
-		Parameters:  parameters,
 	}
-	outputDataSource := cc.DataSource{
+	action.Attributes = attrs
+	/*outputDataSource := cc.DataSource{
 		Name:      "outputdestination",
 		ID:        &uuid.NameSpaceDNS,
-		Paths:     []string{"/app/data"},
-		DataPaths: []string{},
+		Paths:     map[string]string{"default": "/app/data"},
 		StoreName: "Local",
-	}
+	}*/
 	gfbytes, err := os.ReadFile("/workspaces/hms-mutator/exampledata/D_Transpose.grid")
 	if err != nil {
 		t.Fail()
@@ -86,15 +84,14 @@ func TestValidStratifiedLocations(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	sc, err := InitStratifiedCompute(action, gf, tbytes, wbytes, outputDataSource)
+	sc, err := InitStratifiedCompute(action, gf, tbytes, wbytes)
 	if err != nil {
 		t.Fail()
 	}
 	inputRoot := cc.DataSource{
 		Name:      "inputRoot",
 		ID:        &uuid.NameSpaceDNS,
-		Paths:     []string{"/workspaces/hms-mutator/exampledata/1979-02-05.tif"},
-		DataPaths: []string{},
+		Paths:     map[string]string{"default": "/workspaces/hms-mutator/exampledata/1979-02-05.tif"},
 		StoreName: "",
 	}
 	//pm, err := cc.InitPluginManager()

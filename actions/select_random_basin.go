@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/usace/cc-go-sdk"
-	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
+	"github.com/usace/hms-mutator/utils"
 )
 
 //the objective of this action is to randomize the basin utilized in an HMS compute
@@ -18,12 +18,12 @@ import (
 
 type SelectBasinAction struct {
 	action   cc.Action
-	seedSet  plugin.SeedSet
+	seedSet  utils.SeedSet
 	inputDS  cc.DataSource
 	outputDS cc.DataSource
 }
 
-func InitSelectBasinAction(action cc.Action, seedSet plugin.SeedSet, inputDs cc.DataSource, outputDS cc.DataSource) *SelectBasinAction {
+func InitSelectBasinAction(action cc.Action, seedSet utils.SeedSet, inputDs cc.DataSource, outputDS cc.DataSource) *SelectBasinAction {
 	sba := SelectBasinAction{
 		action:   action,
 		seedSet:  seedSet,
@@ -34,17 +34,17 @@ func InitSelectBasinAction(action cc.Action, seedSet plugin.SeedSet, inputDs cc.
 }
 func (sba SelectBasinAction) Compute() (time.Time, error) {
 	//get range of basin scenarios (ints between 0 and n?)
-	maxbasinid := sba.action.Parameters.GetIntOrFail("maxBasinId")
-	basinExtension := sba.action.Parameters.GetStringOrFail("basinExtension")
-	targetBasinFileName := sba.action.Parameters.GetStringOrFail("targetBasinFileName")
-	controlExtension := sba.action.Parameters.GetStringOrFail("controlExtension")
-	targetControlFileName := sba.action.Parameters.GetStringOrFail("targetControlFileName")
+	maxbasinid := sba.action.Attributes.GetIntOrFail("maxBasinId")
+	basinExtension := sba.action.Attributes.GetStringOrFail("basinExtension")
+	targetBasinFileName := sba.action.Attributes.GetStringOrFail("targetBasinFileName")
+	controlExtension := sba.action.Attributes.GetStringOrFail("controlExtension")
+	targetControlFileName := sba.action.Attributes.GetStringOrFail("targetControlFileName")
 	//allowing user specified start date to accommodate the inclusion of a setback period.
-	updateStartDateAndTime, err := strconv.ParseBool(sba.action.Parameters.GetStringOrFail("updateStartDateAndTime"))
+	updateStartDateAndTime, err := strconv.ParseBool(sba.action.Attributes.GetStringOrFail("updateStartDateAndTime"))
 	if err != nil {
 		return time.Now(), err
 	}
-	hoursOffset := sba.action.Parameters.GetIntOrDefault("startDateAndTimeOffset", 0)
+	hoursOffset := sba.action.Attributes.GetIntOrDefault("startDateAndTimeOffset", 0)
 
 	//generate a natural variabiilty seed generator
 	rng := rand.New(rand.NewSource(sba.seedSet.EventSeed))
@@ -57,26 +57,26 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 		return time.Now(), err
 	}
 	inDS := sba.inputDS
-	inDSRoot := inDS.Paths[0]
-	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), basinExtension)
-	fmt.Println(inDS.Paths[0])
-	basinbytes, err := pm.GetFile(sba.inputDS, 0)
+	inDSRoot := inDS.Paths["default"]
+	inDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), basinExtension)
+	//fmt.Println(inDS.Paths["default"])
+	basinbytes, err := utils.GetFile(*pm, sba.inputDS, "default") //pm.GetFile(sba.inputDS, 0)
 	if err != nil {
 		return time.Now(), err
 	}
 	//upload the file to filesapi with the appropriate new name.
 	outDS := sba.outputDS
-	outDSRoot := outDS.Paths[0]
-	outDS.Paths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetBasinFileName, basinExtension)
-	fmt.Println(outDS.Paths[0])
-	err = pm.PutFile(basinbytes, sba.outputDS, 0)
+	outDSRoot := outDS.Paths["default"]
+	outDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetBasinFileName, basinExtension)
+	//fmt.Println(outDS.Paths["default"])
+	err = utils.PutFile(basinbytes, pm.IOManager, sba.outputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}
 
-	inDS.Paths[0] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), controlExtension)
-	fmt.Println(inDS.Paths[0])
-	controlbytes, err := pm.GetFile(sba.inputDS, 0)
+	inDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", inDSRoot, fmt.Sprint(sampledBasinId), controlExtension)
+	//fmt.Println(inDS.Paths["default"])
+	controlbytes, err := utils.GetFile(*pm, sba.inputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}
@@ -97,9 +97,9 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	}
 
 	//upload the file to filesapi with the appropriate new name.
-	outDS.Paths[0] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
-	fmt.Println(outDS.Paths[0])
-	err = pm.PutFile(controlbytes, sba.outputDS, 0)
+	outDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
+	fmt.Println(outDS.Paths["default"])
+	err = utils.PutFile(controlbytes, pm.IOManager, sba.outputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}
