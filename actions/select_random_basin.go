@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/usace/cc-go-sdk"
-	"github.com/usace/cc-go-sdk/plugin"
 	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/utils"
 )
@@ -19,12 +18,12 @@ import (
 
 type SelectBasinAction struct {
 	action   cc.Action
-	seedSet  plugin.SeedSet
+	seedSet  utils.SeedSet
 	inputDS  cc.DataSource
 	outputDS cc.DataSource
 }
 
-func InitSelectBasinAction(action cc.Action, seedSet plugin.SeedSet, inputDs cc.DataSource, outputDS cc.DataSource) *SelectBasinAction {
+func InitSelectBasinAction(action cc.Action, seedSet utils.SeedSet, inputDs cc.DataSource, outputDS cc.DataSource) *SelectBasinAction {
 	sba := SelectBasinAction{
 		action:   action,
 		seedSet:  seedSet,
@@ -70,7 +69,7 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	outDSRoot := outDS.Paths["default"]
 	outDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetBasinFileName, basinExtension)
 	//fmt.Println(outDS.Paths["default"])
-	err = utils.PutFile(basinbytes, *pm, sba.outputDS, "default")
+	err = utils.PutFile(basinbytes, pm.IOManager, sba.outputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}
@@ -100,7 +99,7 @@ func (sba SelectBasinAction) Compute() (time.Time, error) {
 	//upload the file to filesapi with the appropriate new name.
 	outDS.Paths["default"] = fmt.Sprintf("%v/%v.%v", outDSRoot, targetControlFileName, controlExtension)
 	fmt.Println(outDS.Paths["default"])
-	err = utils.PutFile(controlbytes, *pm, sba.outputDS, "default")
+	err = utils.PutFile(controlbytes, pm.IOManager, sba.outputDS, "default")
 	if err != nil {
 		return time.Now(), err
 	}

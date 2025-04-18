@@ -21,12 +21,12 @@ func TestStratifiedLocations(t *testing.T) {
 		Description: "create stratified locations for storms",
 	}
 	action.Attributes = attrs
-	outputDataSource := cc.DataSource{
+	/*outputDataSource := cc.DataSource{
 		Name:      "outputdestination",
 		ID:        &uuid.NameSpaceDNS,
 		Paths:     map[string]string{"default": "/app/data"},
 		StoreName: "Local",
-	}
+	}*/
 	gfbytes, err := os.ReadFile("/workspaces/hms-mutator/exampledata/D_Transpose.grid")
 	if err != nil {
 		t.Fail()
@@ -43,7 +43,7 @@ func TestStratifiedLocations(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	sc, err := InitStratifiedCompute(action, gf, pbytes, wbytes, outputDataSource)
+	sc, err := InitStratifiedCompute(action, gf, pbytes, wbytes)
 	if err != nil {
 		t.Fail()
 	}
@@ -62,12 +62,12 @@ func TestValidStratifiedLocations(t *testing.T) {
 		Description: "create stratified locations for storms",
 	}
 	action.Attributes = attrs
-	outputDataSource := cc.DataSource{
+	/*outputDataSource := cc.DataSource{
 		Name:      "outputdestination",
 		ID:        &uuid.NameSpaceDNS,
 		Paths:     map[string]string{"default": "/app/data"},
 		StoreName: "Local",
-	}
+	}*/
 	gfbytes, err := os.ReadFile("/workspaces/hms-mutator/exampledata/D_Transpose.grid")
 	if err != nil {
 		t.Fail()
@@ -84,7 +84,7 @@ func TestValidStratifiedLocations(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	sc, err := InitStratifiedCompute(action, gf, tbytes, wbytes, outputDataSource)
+	sc, err := InitStratifiedCompute(action, gf, tbytes, wbytes)
 	if err != nil {
 		t.Fail()
 	}

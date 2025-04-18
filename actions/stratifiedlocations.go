@@ -40,7 +40,7 @@ type LocationInfo struct {
 const LOCALDIR = "/app/data/"
 const COORDFILE = "locations.csv"
 
-func InitStratifiedCompute(a cc.Action, gridfile hms.GridFile, polygonBytes []byte, watershedbytes []byte, outputDataSource cc.DataSource) (StratifiedCompute, error) {
+func InitStratifiedCompute(a cc.Action, gridfile hms.GridFile, polygonBytes []byte, watershedbytes []byte) (StratifiedCompute, error) {
 
 	//ensure path is local
 	fileName := "transpositionpolygon.gpkg"
@@ -168,8 +168,13 @@ func (sc StratifiedCompute) DetermineValidLocations(inputRoot cc.DataSource) (Va
 	fmt.Println(string(stormcenterbytes))
 	return computeResult, nil
 }
-func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComputeResult, error) {
+func (sc StratifiedCompute) DetermineValidLocationsQuickly(iomanager cc.IOManager) (ValidLocationsComputeResult, error) {
 	var computeResult ValidLocationsComputeResult
+	outputDataSource, err := iomanager.GetOutputDataSource("ValidLocations")
+	if err != nil {
+		return computeResult, errors.New("could not put valid stratified locations for this payload")
+	}
+	validlocationsroot := outputDataSource.Paths["default"]
 	allStormsAllLocations := make([]LocationInfo, 0)
 	validLocationMap := make(map[string]utils.CoordinateList, 0)
 	//generate of candidate storm centers.
@@ -177,9 +182,13 @@ func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComp
 	if err != nil {
 		return computeResult, err
 	}
+	trp := sc.TranspositionPolygon.LayerByIndex(0).Feature(1)
+	//fmt.Println(trp.Geometry().GeometryCount())
+	//fmt.Println(trp.Geometry().Area())
 	sap := sc.StudyAreaPolygon.LayerByIndex(0).NextFeature()
 	defer sap.Destroy()
 	if sap.Geometry().Type() != 3 {
+		fmt.Println(sap.Geometry().Type())
 		return computeResult, errors.New("watershed boundary geometry not a simple polygon")
 	}
 	if sap.IsNull() {
@@ -193,6 +202,7 @@ func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComp
 	//loop through the storms in the grid file(in order for simplicity)
 	stormcenterbytes := make([]byte, 0)
 	for _, storm := range sc.GridFile.Events {
+		fmt.Printf("working on storm %v\n", storm.Name)
 		//create a validlocation coordinate list.
 		validLocations := utils.CoordinateList{Coordinates: make([]utils.Coordinate, 0)}
 		//determine the center of the storm.
@@ -202,14 +212,13 @@ func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComp
 			return computeResult, err
 		}
 
-		stormCoord := utils.Coordinate{X: stormCenter.Y(0), Y: stormCenter.X(0)}
+		stormCoord := utils.Coordinate{X: stormCenter.X(0), Y: stormCenter.Y(0)}
 		stormcenterbytes = append(stormcenterbytes, fmt.Sprintf("%v,%v,%v\n", storm.Name, stormCoord.X, stormCoord.Y)...)
-		//determine the start date of the storm
-		startDate := strings.Split(storm.Name, " ")[1]
-
+		//fmt.Print(string(stormcenterbytes))
 		//fmt.Println(time.Now())
 		//loop through each point in the candidate storm centers
 		for _, candidate := range candidateStormCenters.Coordinates {
+			//fmt.Println(i)
 			locationInfo := LocationInfo{
 				StormName:  storm.Name,
 				Coordinate: candidate,
@@ -218,22 +227,27 @@ func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComp
 			//calculate an offset from the center to the new destination location
 			offset := candidate.DetermineXandYOffset(stormCoord)
 			//invert that offset
-			offset.X = -offset.X
-			offset.Y = -offset.Y
+			//offset.X = -offset.X
+			//offset.Y = -offset.Y
 			func(shift utils.Coordinate) {
 				shiftableWatershedBoundary := sap.Geometry().Clone() //shift watershed boundary
 				defer shiftableWatershedBoundary.Destroy()
 				geometrycount := shiftableWatershedBoundary.GeometryCount()
 				for g := 0; g < geometrycount; g++ {
 					geometry := shiftableWatershedBoundary.Geometry(g)
-					defer geometry.Destroy()
+					//defer geometry.Destroy()
 					geometryPointCount := geometry.PointCount()
+					//fmt.Printf("x,y\n")
 					for i := 0; i < geometryPointCount; i++ {
 						px, py, pz := geometry.Point(i)
-						shiftableWatershedBoundary.Geometry(g).SetPoint(i, px-offset.X, py-offset.Y, pz) //does this work or does it insert?
+						shiftedx := px - shift.X
+						shiftedy := py - shift.Y
+						//fmt.Printf("%v,%v\n", shiftedx, shiftedy)
+						shiftableWatershedBoundary.Geometry(g).SetPoint(i, shiftedx, shiftedy, pz) //does this work or does it insert?
 					}
 				}
-				shiftContained := sc.TranspositionPolygon.LayerByIndex(0).NextFeature().Geometry().Contains(shiftableWatershedBoundary)
+
+				shiftContained := trp.Geometry().Contains(shiftableWatershedBoundary)
 				if shiftContained {
 					locationInfo.IsValid = true
 					validLocations.Coordinates = append(validLocations.Coordinates, candidate)
@@ -243,7 +257,15 @@ func (sc StratifiedCompute) DetermineValidLocationsQuickly() (ValidLocationsComp
 			allStormsAllLocations = append(allStormsAllLocations, locationInfo)
 			//next cell center
 		} //next transposition location
-		validLocationMap[fmt.Sprintf("%v.csv", startDate)] = validLocations
+		fmt.Printf("found %v valid placements for storm %v\n", len(validLocations.Coordinates), storm.Name)
+		name := fmt.Sprintf("%v.csv", storm.Name)
+		validLocationMap[name] = validLocations
+		outputDataSource.Paths["default"] = fmt.Sprintf("%v/%v", validlocationsroot, name)
+		err = utils.PutFile(validLocations.ToBytes(), iomanager, outputDataSource, "default")
+		if err != nil {
+			return computeResult, err
+		}
+
 	} //next storm
 	computeResult.StormMap = validLocationMap
 	computeResult.AllStormsAllLocations = allStormsAllLocations
@@ -255,13 +277,14 @@ func (sc StratifiedCompute) generateStormCenters() (utils.CoordinateList, error)
 
 }
 func generateUniformPointList(ds gdal.DataSource, spacing float64) (utils.CoordinateList, error) {
+	fmt.Printf("determining potential placements\n")
 	coordinates := utils.CoordinateList{Coordinates: make([]utils.Coordinate, 0)}
 	layer := ds.LayerByIndex(0)
 	ref := layer.SpatialReference()
 	//fmt.Println("features:")
 	//fmt.Println(layer.FeatureCount(true))
-	polygon := layer.NextFeature()
-	defer polygon.Destroy()
+	polygon := layer.Feature(1)
+	//defer polygon.Destroy()
 	envelope, err := layer.Extent(true)
 	if err != nil {
 		return coordinates, err
@@ -284,6 +307,7 @@ func generateUniformPointList(ds gdal.DataSource, spacing float64) (utils.Coordi
 	currentYval := MaxY + (spacing / 2)
 	var currentXval float64
 	//generate a full row, incriment y and start the next row.
+	//fmt.Printf("x,y\n")
 	for y < ySteps { //iterate across all rows
 		x = 0
 		currentXval = MinX + (spacing / 2)
@@ -297,12 +321,14 @@ func generateUniformPointList(ds gdal.DataSource, spacing float64) (utils.Coordi
 			}
 			if polygon.Geometry().Contains(location) {
 				//record the location.
+				//fmt.Printf("%v,%v\n", location.X(0), location.Y(0))
 				coordinates.Coordinates = append(coordinates.Coordinates, utils.Coordinate{X: currentXval, Y: currentYval})
 			}
 		}
 		y++ //step to next row
 		currentYval -= spacing
 	}
+	fmt.Printf("determined %v potential placements\n", len(coordinates.Coordinates))
 	return coordinates, err
 }
 func wrieStormCenters(coordinates utils.CoordinateList) error {

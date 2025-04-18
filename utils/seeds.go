@@ -7,6 +7,10 @@ import (
 	"github.com/usace/cc-go-sdk"
 )
 
+// EventConfiguration is a simple structure to support consistency in cc plugins regarding the usage of seeds for natural variability and knowledge uncertainty and realization numbers for indexing
+type EventConfiguration struct {
+	Seeds map[string]SeedSet `json:"seeds" eventstore:"seeds"`
+}
 type SeedSet struct {
 	EventSeed       int64 `json:"event_seed" eventstore:"event_seed"`
 	RealizationSeed int64 `json:"realization_seed" eventstore:"realization_seed"`

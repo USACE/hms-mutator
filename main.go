@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/usace/cc-go-sdk"
-	"github.com/usace/cc-go-sdk/plugin"
+	tiledb "github.com/usace/cc-go-sdk/tiledb-store"
 	"github.com/usace/hms-mutator/actions"
 	"github.com/usace/hms-mutator/hms"
 	"github.com/usace/hms-mutator/utils"
@@ -25,6 +25,8 @@ const WORKING_DIRECTORY string = "/data"
 func main() {
 
 	fmt.Println("hms-mutator!")
+	//register tiledb
+	cc.DataStoreTypeRegistry.Register("TILEDB", tiledb.TileDbEventStore{})
 	pm, err := cc.InitPluginManager()
 	if err != nil {
 		fmt.Println("could not initiate plugin manager")
@@ -169,7 +171,7 @@ func main() {
 				}
 			}
 		case "stratified_locations":
-			sla, err := actions.InitStratifiedCompute(a, gridFile, transpositionDomainBytes, watershedDomainBytes, payload.Outputs[0])
+			sla, err := actions.InitStratifiedCompute(a, gridFile, transpositionDomainBytes, watershedDomainBytes) //, payload.Outputs[0])
 			if err != nil {
 				pm.Logger.Error("could not initalize stratified locations for this payload")
 				return
@@ -186,7 +188,7 @@ func main() {
 				pm.Logger.Error("could not put stratified locations for this payload")
 				return
 			}
-			utils.PutFile(output.CandiateLocations.ToBytes(), *pm, locations, "default")
+			utils.PutFile(output.CandiateLocations.ToBytes(), pm.IOManager, locations, "default")
 			gridFileOutput, err := pm.GetOutputDataSource("GridFile")
 			if err != nil {
 				pm.Logger.Error("could not put gridfiles for this payload")
@@ -195,30 +197,26 @@ func main() {
 			root := path.Dir(gridFileOutput.Paths["default"])
 			for k, v := range output.GridFiles {
 				gridFileOutput.Paths["default"] = fmt.Sprintf("%v/%v.grid", root, k)
-				utils.PutFile(v, *pm, gridFileOutput, "default")
+				utils.PutFile(v, pm.IOManager, gridFileOutput, "default")
 			}
 		case "valid_stratified_locations":
-			sla, err := actions.InitStratifiedCompute(a, gridFile, transpositionDomainBytes, watershedDomainBytes, payload.Outputs[0])
+			sla, err := actions.InitStratifiedCompute(a, gridFile, transpositionDomainBytes, watershedDomainBytes) //, payload.Outputs[0])
 			if err != nil {
 				pm.Logger.Error("could not initalize valid stratified locations for this payload")
 				return
 			}
 			//inputSource, err := pm.GetInputDataSource("Cumulative Grids")
-			output, err := sla.DetermineValidLocationsQuickly() //sla.DetermineValidLocations(inputSource) //update to be based on output location?
+			outputDataSource, err := a.GetOutputDataSource("ValidLocations")
+			if err != nil {
+				pm.Logger.Error("could not put valid stratified locations for this payload")
+			}
+			root := outputDataSource.Paths["default"]
+			output, err := sla.DetermineValidLocationsQuickly(pm.IOManager) //sla.DetermineValidLocations(inputSource) //update to be based on output location?
 			if err != nil {
 				pm.Logger.Error("could not compute valid stratified locations for this payload")
 				return
 			}
-			outputDataSource, err := pm.GetOutputDataSource("ValidLocations")
-			if err != nil {
-				pm.Logger.Error("could not put valid stratified locations for this payload")
-				return
-			}
-			root := path.Dir(outputDataSource.DataPaths["default"])
-			for k, v := range output.StormMap {
-				outputDataSource.Paths["default"] = fmt.Sprintf("%v/%v.csv", root, k)
-				utils.PutFile(v.ToBytes(), *pm, outputDataSource, "default")
-			}
+
 			outputDataSource.Paths["default"] = fmt.Sprintf("%v/%v.csv", root, "AllStormsAllLocations")
 			outbytes := make([]byte, 0)
 			outbytes = append(outbytes, "StormName,X,Y,IsValid"...)
@@ -235,7 +233,7 @@ func main() {
 			for i, _ := range output.AllStormsAllLocations {
 				outbytes = append(outbytes, fmt.Sprintf("%v,%v,%v,%v\n", output.AllStormsAllLocations[indexes[i]].StormName, output.AllStormsAllLocations[indexes[i]].Coordinate.X, output.AllStormsAllLocations[indexes[i]].Coordinate.Y, output.AllStormsAllLocations[indexes[i]].IsValid)...)
 			}
-			utils.PutFile(outbytes, *pm, outputDataSource, "default")
+			utils.PutFile(outbytes, pm.IOManager, outputDataSource, "default")
 		}
 	}
 	if err != nil {
@@ -262,7 +260,7 @@ func getInputBytes(keyword string, extension string, payload cc.Payload, pm *cc.
 	returnBytes := make([]byte, 0)
 	for _, input := range payload.Inputs {
 		if strings.Contains(input.Name, keyword) {
-			index := ""
+			index := "default"
 			has := false
 			if extension != "" {
 				for i, Path := range input.Paths {
@@ -290,25 +288,26 @@ func putOutputBytes(data []byte, keyword string, payload cc.Payload, pm *cc.Plug
 	if err != nil {
 		return err
 	}
-	err = utils.PutFile(data, *pm, output, "default")
+	err = utils.PutFile(data, pm.IOManager, output, "default")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func readSeedFile(seedFileBytes []byte) (plugin.SeedSet, error) {
+func readSeedFile(seedFileBytes []byte) (utils.SeedSet, error) {
 	//read event configuration
-	var ec plugin.EventConfiguration
-	var seedSet plugin.SeedSet
+	var ec []utils.EventConfiguration
+	var seedSet utils.SeedSet
 	err := json.Unmarshal(seedFileBytes, &ec)
 	if err != nil {
 		return seedSet, err
 	}
 	seedSetName := pluginName
-	seedSet, ssok := ec.Seeds[seedSetName]
+	seedinstance := ec[0] //[seedSetName]
+	seeds, ssok := seedinstance.Seeds[seedSetName]
 	if !ssok {
 		return seedSet, errors.New("could not find seed set for seedset name")
 	}
-	return seedSet, nil
+	return seeds, nil
 }
