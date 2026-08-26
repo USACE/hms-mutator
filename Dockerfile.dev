@@ -1,4 +1,4 @@
-FROM cc-tiledb
+FROM ghcr.io/usace-cloud-compute/cc-tiledb-golang:latest
 
 RUN apt update &&\
 	apt -y install gdal-bin gdal-data libgdal-dev

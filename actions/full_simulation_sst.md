@@ -45,7 +45,8 @@ The configuration for this action is fully defined in the action itself, no glob
 				"nov_dec_2015", 
 				"oct_nov_2015"],
 			"seed_datasource_key": "seeds",
-			"blocks_datasource_key": "blocks"
+			"blocks_datasource_key": "blocks",
+			"sampling_method": "best_estimate"
 		}
 ```
 -  ouptut_data_source: the name of the output datasource where the storm recordset data will be stored.
@@ -63,6 +64,7 @@ The configuration for this action is fully defined in the action itself, no glob
 -  calibration_event_names: defines the string name of calibration datasets used, will be used in conjunction with the basin root directory, por start and end dates to construct a fully qualified path to a basin for each storm.
 -  seed_datasource_key: the name of the seed datasource
 -  blocks_datasource_key: the name of the blocks datasource
+-  sampling_method: the sampling type bootstrap, jackknife or best_estimate (default)
 
 ## inputs
 No environment variables are needed

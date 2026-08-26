@@ -2,6 +2,7 @@ package actions
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -59,7 +60,29 @@ func (frsst *FullSimulationSST) Compute(pm *cc.PluginManager) error {
 	if err != nil {
 		return err
 	}
-	//if i wanted to bootstrap, i could bootstrap the storm list now...
+
+	samplingMethod := a.Attributes.GetStringOrDefault("sampling_method", "best_estimate")
+	var sampler utils.StormSampler
+	switch samplingMethod {
+	case "best_estimate":
+		sampler, err = utils.InitBestEstimateSampler(stormList)
+		if err != nil {
+			return err
+		}
+	case "bootstrap":
+		sampler, err = utils.InitBootstrapSampler(stormList)
+		if err != nil {
+			return err
+		}
+	case "jackknife":
+		sampler, err = utils.InitJackknifeSampler(stormList)
+		if err != nil {
+			return err
+		}
+	default:
+
+		return errors.New("samlper type not defined " + samplingMethod)
+	}
 
 	///use fishnets to figure out placements - select from list of valid placements. fishnets are currently expected to be unique to each storm... could be converted to be unique to each storm type.
 	fishnetDirectory := a.Attributes.GetStringOrFail("fishnet_directory")
@@ -123,7 +146,7 @@ func (frsst *FullSimulationSST) Compute(pm *cc.PluginManager) error {
 	if err != nil {
 		return err
 	}
-	results, err := compute(stormList, calibrationEvents, basinRootDir, basinName, fishNetMap, fishnettypeorname, stormTypeSeasonalityDistributionsMap, porStartDate, porEndDate, seeds, blocks)
+	results, err := compute(stormList, calibrationEvents, basinRootDir, basinName, fishNetMap, fishnettypeorname, stormTypeSeasonalityDistributionsMap, porStartDate, porEndDate, seeds, blocks, sampler)
 	if err != nil {
 		return err
 	}
@@ -135,18 +158,29 @@ func (frsst *FullSimulationSST) Compute(pm *cc.PluginManager) error {
 	}
 
 }
-func compute(stormNames []string, calibrationEventNames []string, basinRootDir string, basinName string, fishnets utils.FishNetMap, fishnettypeorname string, seasonalDistributions utils.StormTypeSeasonalityDistributionMap, porStart time.Time, porEnd time.Time, seeds []utils.SeedSet, blocks []utils.Block) (FullSimulationResult, error) {
+func compute(stormNames []string, calibrationEventNames []string, basinRootDir string, basinName string, fishnets utils.FishNetMap, fishnettypeorname string, seasonalDistributions utils.StormTypeSeasonalityDistributionMap, porStart time.Time, porEnd time.Time, seeds []utils.SeedSet, blocks []utils.Block, sampler utils.StormSampler) (FullSimulationResult, error) {
 	results := make(FullSimulationResult, 0)
+	//realizationIndex := -1
 	for _, b := range blocks {
+		//right here i would have logic to determine if the sampler needs to be updated for the list of storms at either the realization or block level
+		//sampler.SampleNames(b.BlockEventStart,seeds)//find the right event number at the start of a block
+		//or
+		//if realizationIndex != int(b.RealizationIndex){
+		//	sampler.SampleNames(b.BlockEventStart,seeds) //find the right event number at the start of a block
+		//	realizationIndex = int(b.RealizationIndex)
+		//}
+
 		if b.BlockEventCount > 0 {
 			for en := b.BlockEventStart; en <= b.BlockEventEnd; en++ {
 				//create random number generator for event
 				if int(en) <= len(seeds) {
 					enRng := rand.New(rand.NewSource(seeds[en-1].EventSeed))
+					//right here i would have logic to determine if the sampler needs to be updated for the list of storms at the event level
+					//sampler.SampleNames(en,seeds)
 					//sample storm name
-					stormName := stormNames[enRng.Intn(len(stormNames))]
+					stormName := sampler.SampleName(enRng) //stormNames[enRng.Intn(len(stormNames))]
 					//calculate storm type from storm name
-					stormType := strings.Split(stormName, "_")[2] //assuming yyyymmdd_xxhr_data-type_storm-type_storm-rank - if data-type is dropped as i hope this needs to be updated to 2
+					stormType := strings.Split(stormName, "_")[2] //assuming yyyymmdd_xxhr_storm-type_storm-rank
 					//sample calibration event
 					calibrationEvent := calibrationEventNames[enRng.Intn(len(calibrationEventNames))]
 					//fetch fishnet based on storm name -
